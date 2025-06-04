@@ -6,37 +6,54 @@ const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
 // EmailJS configuration for password emails - using hardcoded values from screenshot
-const EMAILJS_SERVICE_ID_2 = "service_6qapr5j";
-const EMAILJS_TEMPLATE_ID_2 = "template_gxaszm8";
+const EMAILJS_SERVICE_ID_2 = import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_6qapr5j";
+const EMAILJS_TEMPLATE_ID_2 = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "template_gxaszm8";
 const EMAILJS_PUBLIC_KEY_2 = import.meta.env.VITE_EMAILJS_PUBLIC_KEY_2;
 
 // Initialize EmailJS with better error handling
-try {
-  if (!EMAILJS_PUBLIC_KEY_2) {
-    throw new Error('EmailJS Public Key 2 is missing');
+const initializeEmailJS = () => {
+  try {
+    if (!EMAILJS_PUBLIC_KEY_2) {
+      console.error('EmailJS Public Key is missing. Please check your environment variables.');
+      return false;
+    }
+    emailjs.init(EMAILJS_PUBLIC_KEY_2);
+    console.log('EmailJS initialized successfully');
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize EmailJS:', error);
+    return false;
   }
-  emailjs.init(EMAILJS_PUBLIC_KEY_2);
-  console.log('EmailJS initialized successfully');
-} catch (error) {
-  console.error('Failed to initialize EmailJS:', error);
-}
+};
 
-// Verify EmailJS configuration
+// Verify EmailJS configuration with detailed logging
 const verifyEmailJSConfig = () => {
+  console.log('Verifying EmailJS configuration...');
+  
   if (!EMAILJS_SERVICE_ID_2) {
     console.error('EmailJS Service ID is missing');
     return false;
   }
+  console.log('Service ID verified');
+
   if (!EMAILJS_TEMPLATE_ID_2) {
     console.error('EmailJS Template ID is missing');
     return false;
   }
+  console.log('Template ID verified');
+
   if (!EMAILJS_PUBLIC_KEY_2) {
     console.error('EmailJS Public Key is missing');
     return false;
   }
+  console.log('Public Key verified');
+
+  console.log('EmailJS configuration is complete');
   return true;
 };
+
+// Initialize EmailJS when the module loads
+const isInitialized = initializeEmailJS();
 
 export const sendPasswordEmail = async (
   userEmail: string,
@@ -44,6 +61,13 @@ export const sendPasswordEmail = async (
   password: string
 ): Promise<boolean> => {
   try {
+    console.log('Starting email send process...');
+    
+    if (!isInitialized) {
+      console.error('EmailJS was not properly initialized');
+      return false;
+    }
+
     if (!verifyEmailJSConfig()) {
       throw new Error('EmailJS configuration is incomplete');
     }
@@ -91,9 +115,18 @@ export const sendPasswordEmail = async (
       text: response.text,
       timestamp: new Date().toISOString()
     });
+    
     return response.status === 200;
   } catch (error) {
     console.error('Error sending password email:', error);
+    // Log more detailed error information
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
     return false;
   }
 };

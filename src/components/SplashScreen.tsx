@@ -25,7 +25,7 @@ const SplashScreen: React.FC = () => {
         onEnded={() => setVideoEnded(true)}
       >
         {/* Replace the source with your video file */}
-        <source src="/sss.mp4" type="video/mp4" />
+        <source src="/ssss.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
