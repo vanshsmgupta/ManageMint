@@ -1,24 +1,19 @@
 import emailjs from '@emailjs/browser';
 
-// EmailJS configuration for timesheet emails
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-
-// EmailJS configuration for password emails - using hardcoded values from screenshot
-const EMAILJS_SERVICE_ID_2 = import.meta.env.VITE_EMAILJS_SERVICE_ID || "service_6qapr5j";
-const EMAILJS_TEMPLATE_ID_2 = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || "template_gxaszm8";
-const EMAILJS_PUBLIC_KEY_2 = import.meta.env.VITE_EMAILJS_PUBLIC_KEY_2;
+// EmailJS configuration with hardcoded values for password emails
+const EMAILJS_SERVICE_ID = "service_6qapr5j";  // Hardcoding the working service ID
+const EMAILJS_TEMPLATE_ID = "template_gxaszm8"; // Hardcoding the working template ID
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY_2;
 
 // Initialize EmailJS with better error handling
 const initializeEmailJS = () => {
   try {
-    if (!EMAILJS_PUBLIC_KEY_2) {
+    if (!EMAILJS_PUBLIC_KEY) {
       console.error('EmailJS Public Key is missing. Please check your environment variables.');
       return false;
     }
-    emailjs.init(EMAILJS_PUBLIC_KEY_2);
-    console.log('EmailJS initialized successfully');
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    console.log('EmailJS initialized successfully with public key:', EMAILJS_PUBLIC_KEY);
     return true;
   } catch (error) {
     console.error('Failed to initialize EmailJS:', error);
@@ -30,23 +25,23 @@ const initializeEmailJS = () => {
 const verifyEmailJSConfig = () => {
   console.log('Verifying EmailJS configuration...');
   
-  if (!EMAILJS_SERVICE_ID_2) {
+  if (!EMAILJS_SERVICE_ID) {
     console.error('EmailJS Service ID is missing');
     return false;
   }
-  console.log('Service ID verified');
+  console.log('Service ID verified:', EMAILJS_SERVICE_ID);
 
-  if (!EMAILJS_TEMPLATE_ID_2) {
+  if (!EMAILJS_TEMPLATE_ID) {
     console.error('EmailJS Template ID is missing');
     return false;
   }
-  console.log('Template ID verified');
+  console.log('Template ID verified:', EMAILJS_TEMPLATE_ID);
 
-  if (!EMAILJS_PUBLIC_KEY_2) {
+  if (!EMAILJS_PUBLIC_KEY) {
     console.error('EmailJS Public Key is missing');
     return false;
   }
-  console.log('Public Key verified');
+  console.log('Public Key verified:', EMAILJS_PUBLIC_KEY);
 
   console.log('EmailJS configuration is complete');
   return true;
@@ -80,7 +75,7 @@ export const sendPasswordEmail = async (
       from_name: 'Task Management System',
       subject: 'Welcome to Task Management System - Your Account Details',
       title: 'Welcome to Our Team! 🎉',
-      header_image: 'https://i.imgur.com/7nrLVBg.png', // You can replace this with your company logo
+      header_image: 'https://i.imgur.com/7nrLVBg.png',
       message: `We're excited to have you join our team! Your account has been successfully created, and you can now access the Task Management System. Here are your login credentials:`,
       footer_message: `For security reasons, we recommend changing your password after your first login. If you have any questions or need assistance, please don't hesitate to reach out to our support team.`,
       company_name: 'Task Management System',
@@ -89,15 +84,15 @@ export const sendPasswordEmail = async (
         linkedin: 'https://linkedin.com/company/yourcompany',
         twitter: 'https://twitter.com/yourcompany'
       },
-      accent_color: '#6366f1', // Indigo color matching your UI
-      background_color: '#1f2937', // Dark background matching your UI
+      accent_color: '#6366f1',
+      background_color: '#1f2937',
       reply_to: 'support@taskmanagement.com'
     };
 
     console.log('Attempting to send email with config:', {
-      serviceId: EMAILJS_SERVICE_ID_2,
-      templateId: EMAILJS_TEMPLATE_ID_2,
-      hasPublicKey: !!EMAILJS_PUBLIC_KEY_2,
+      serviceId: EMAILJS_SERVICE_ID,
+      templateId: EMAILJS_TEMPLATE_ID,
+      hasPublicKey: !!EMAILJS_PUBLIC_KEY,
       templateParams: {
         ...templateParams,
         password: '****' // Hide password in logs
@@ -105,8 +100,8 @@ export const sendPasswordEmail = async (
     });
 
     const response = await emailjs.send(
-      EMAILJS_SERVICE_ID_2,
-      EMAILJS_TEMPLATE_ID_2,
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
       templateParams
     );
 
@@ -131,6 +126,7 @@ export const sendPasswordEmail = async (
   }
 };
 
+// Test email function for verifying configuration
 export const testEmailService = async (): Promise<boolean> => {
   try {
     if (!verifyEmailJSConfig()) {
@@ -138,40 +134,25 @@ export const testEmailService = async (): Promise<boolean> => {
     }
 
     const templateParams = {
-      to_email: 'gvansh2434@gmail.com',
+      to_email: 'test@example.com',
       to_name: 'Test User',
       password: 'TestPassword123',
       login_url: window.location.origin + '/login',
       from_name: 'Task Management System',
-      subject: 'Welcome to Task Management System - Your Account Details',
-      title: 'Welcome to Our Team! 🎉',
-      header_image: 'https://i.imgur.com/7nrLVBg.png',
-      message: `We're excited to have you join our team! Your account has been successfully created, and you can now access the Task Management System. Here are your login credentials:`,
-      footer_message: `For security reasons, we recommend changing your password after your first login. If you have any questions or need assistance, please don't hesitate to reach out to our support team.`,
-      company_name: 'Task Management System',
-      company_address: 'Your Company Address',
-      social_links: {
-        linkedin: 'https://linkedin.com/company/yourcompany',
-        twitter: 'https://twitter.com/yourcompany'
-      },
-      accent_color: '#6366f1',
-      background_color: '#1f2937',
-      reply_to: 'support@taskmanagement.com'
+      subject: 'Test Email - Task Management System',
+      title: 'Test Email',
+      message: 'This is a test email to verify the EmailJS configuration.',
     };
 
     console.log('Sending test email with config:', {
-      serviceId: EMAILJS_SERVICE_ID_2,
-      templateId: EMAILJS_TEMPLATE_ID_2,
-      hasPublicKey: !!EMAILJS_PUBLIC_KEY_2,
-      templateParams: {
-        ...templateParams,
-        password: '****' // Hide password in logs
-      }
+      serviceId: EMAILJS_SERVICE_ID,
+      templateId: EMAILJS_TEMPLATE_ID,
+      hasPublicKey: !!EMAILJS_PUBLIC_KEY
     });
 
     const response = await emailjs.send(
-      EMAILJS_SERVICE_ID_2,
-      EMAILJS_TEMPLATE_ID_2,
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
       templateParams
     );
 

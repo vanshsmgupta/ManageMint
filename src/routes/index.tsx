@@ -8,6 +8,7 @@ import SplashScreen from '../components/SplashScreen';
 import NotificationList from '../components/notifications/NotificationList';
 import DashboardLayout from '../components/Layout/DashboardLayout';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import NotFound from '../pages/NotFound';
 
 const routes: RouteObject[] = [
   {
@@ -27,6 +28,10 @@ const routes: RouteObject[] = [
         </DashboardLayout>
       </ProtectedRoute>
     )
+  },
+  {
+    path: '*',
+    element: <NotFound />
   }
 ];
 

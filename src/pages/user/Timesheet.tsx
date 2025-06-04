@@ -477,55 +477,61 @@ const Timesheet = () => {
 
   if (!isStartDateSet) {
     return (
-      <div className="min-h-screen bg-[#0B0F17] p-8 flex items-center justify-center">
-        <Card className="w-full max-w-md bg-[#1C1F26] border-t-2 border-t-purple-500 border-x-0 border-b-0">
-          <CardHeader>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <CardTitle className="text-white/90">Setup Timesheet</CardTitle>
+      <div className="min-h-screen bg-[#0B0F17] p-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Timesheet Setup</h1>
+          <p className="text-gray-400">Configure your timesheet preferences to get started</p>
+        </div>
+
+        <Card className="bg-white/5 backdrop-blur-sm rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-purple-500 rounded-full" />
+              <span className="text-lg text-white">Initial Configuration</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-white/60 mb-2">
-                  When did you start working on this project?
-                </label>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 rounded-full">
+              <Calendar className="w-4 h-4 text-purple-400" />
+              <span className="text-sm text-purple-400">First Time Setup</span>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <Calendar className="w-5 h-5 text-gray-400" />
+              <div className="flex-1">
                 <input
                   type="date"
                   value={format(selectedDate, 'yyyy-MM-dd')}
                   onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                  className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-3 bg-[#1C1F26] border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   max={format(new Date(), 'yyyy-MM-dd')}
                 />
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-white/60 mb-2">
-                  How often do you submit timesheets?
-                </label>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Clock className="w-5 h-5 text-gray-400" />
+              <div className="flex-1">
                 <select
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value as FrequencyType)}
-                  className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-3 bg-[#1C1F26] border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
                 >
                   <option value="weekly">Weekly</option>
                   <option value="biweekly">Bi-weekly</option>
                   <option value="monthly">Monthly</option>
                 </select>
               </div>
-
-              <div className="pt-4">
-                <Button
-                  onClick={handleStartDateSetup}
-                  className="w-full bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 flex items-center justify-center space-x-2"
-                >
-                  <CalendarDays className="w-4 h-4" />
-                  <span>Start Tracking Time</span>
-                </Button>
-              </div>
             </div>
-          </CardContent>
+
+            <Button
+              onClick={handleStartDateSetup}
+              className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 flex items-center justify-center gap-2 rounded-lg mt-4"
+            >
+              <CalendarDays className="w-5 h-5" />
+              <span>Start Tracking Time</span>
+            </Button>
+          </div>
         </Card>
       </div>
     );
