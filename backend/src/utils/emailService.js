@@ -91,4 +91,81 @@ export const emailTemplates = {
     }">View Timesheet</a>
     `,
   }),
+
+  newUserWelcome: (user, tempPassword) => ({
+    subject: 'Welcome to Task Management System',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #6366f1;">Welcome to Task Management System! 🎉</h1>
+          <p>Hello ${user.firstName},</p>
+          <p>Your account has been created by the administrator. Here are your login credentials:</p>
+          
+          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>Email:</strong> ${user.email}</p>
+            <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+          </div>
+
+          <p><strong>Important:</strong> For security reasons, please change your password after your first login.</p>
+          
+          <div style="margin: 25px 0;">
+            <a href="${process.env.FRONTEND_URL}/login" 
+               style="background-color: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Login to Your Account
+            </a>
+          </div>
+
+          <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+          
+          <hr style="border: 1px solid #eee; margin: 20px 0;">
+          
+          <p style="color: #666; font-size: 12px;">
+            This is an automated message, please do not reply directly to this email.
+          </p>
+        </div>
+      </body>
+      </html>
+    `,
+  }),
+
+  newMarketerWelcome: (marketer, tempPassword) => ({
+    subject: 'Welcome to Task Management System - Marketing Team',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #6366f1;">Welcome to Our Marketing Team! 🚀</h1>
+          <p>Hello ${marketer.name},</p>
+          <p>Your marketer account has been created by the administrator. Here are your login credentials:</p>
+          
+          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>Email:</strong> ${marketer.email}</p>
+            <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+            <p><strong>Specialization:</strong> ${marketer.specialization}</p>
+          </div>
+
+          <p><strong>Important:</strong> For security reasons, please change your password after your first login.</p>
+          
+          <div style="margin: 25px 0;">
+            <a href="${process.env.FRONTEND_URL}/login" 
+               style="background-color: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Login to Your Account
+            </a>
+          </div>
+
+          <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+          
+          <hr style="border: 1px solid #eee; margin: 20px 0;">
+          
+          <p style="color: #666; font-size: 12px;">
+            This is an automated message, please do not reply directly to this email.
+          </p>
+        </div>
+      </body>
+      </html>
+    `,
+  }),
 }; 

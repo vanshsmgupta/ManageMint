@@ -93,18 +93,10 @@ export const createUser = async (req, res) => {
 
     await user.save();
 
-    // Send welcome email with temporary password
+    // Send welcome email with temporary password using the new template
     await sendEmail({
       to: email,
-      subject: 'Welcome to Task Management System',
-      html: `
-        <h1>Welcome ${firstName}!</h1>
-        <p>Your account has been created successfully.</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Temporary Password:</strong> ${tempPassword}</p>
-        <p>Please change your password after your first login for security purposes.</p>
-        <p>You can log in at: ${process.env.FRONTEND_URL || 'http://localhost:5173'}</p>
-      `,
+      ...emailTemplates.newUserWelcome(user, tempPassword)
     });
 
     // Return success but don't include the password in the response
