@@ -7,12 +7,28 @@ import Button from '../../components/ui/Button';
 import { useNotifications } from '../../context/NotificationContext';
 
 // EmailJS configuration
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+const EMAILJS_SERVICE_ID = "service_6qapr5j";  // Hardcoding the working service ID
+const EMAILJS_TEMPLATE_ID = "template_gxaszm8"; // Hardcoding the working template ID
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY_2;
 
-// Initialize EmailJS
-emailjs.init(EMAILJS_PUBLIC_KEY);
+// Initialize EmailJS with better error handling
+const initializeEmailJS = () => {
+  try {
+    if (!EMAILJS_PUBLIC_KEY) {
+      console.error('EmailJS Public Key is missing. Please check your environment variables.');
+      return false;
+    }
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    console.log('EmailJS initialized successfully');
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize EmailJS:', error);
+    return false;
+  }
+};
+
+// Initialize EmailJS when the module loads
+const isInitialized = initializeEmailJS();
 
 // Project start date - you should store this in your configuration or get it from an API
 const PROJECT_START_DATE = '2024-03-01'; // Example date, adjust as needed
@@ -284,6 +300,13 @@ const Timesheet = () => {
       return;
     }
 
+    // Verify EmailJS configuration
+    if (!isInitialized) {
+      console.error('EmailJS was not properly initialized');
+      alert('Email service is not properly configured. Please contact support.');
+      return;
+    }
+
     if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
       console.error('EmailJS Configuration:', {
         serviceId: EMAILJS_SERVICE_ID,
@@ -369,12 +392,11 @@ const Timesheet = () => {
         message: `Timesheet submission for cycle: ${cycleStartDate} - ${cycleEndDate}\nTotal Hours: ${totalHours}\nFrequency: ${frequency}\n\nHours Breakdown:\n${hoursData}`
       };
 
-      // Send email using EmailJS
+      // Send email using EmailJS with proper configuration
       const response = await emailjs.send(
         EMAILJS_SERVICE_ID,
         EMAILJS_TEMPLATE_ID,
-        templateParams,
-        EMAILJS_PUBLIC_KEY
+        templateParams
       );
 
       if (response.status === 200) {
@@ -405,7 +427,7 @@ const Timesheet = () => {
       }
     } catch (error) {
       console.error('Error submitting timesheet:', error);
-      alert('Error submitting timesheet. Please check the console for details and try again.');
+      alert('Error submitting timesheet. Please try again or contact support if the issue persists.');
     } finally {
       setIsSubmitting(false);
     }
