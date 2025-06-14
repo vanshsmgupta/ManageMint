@@ -17,6 +17,8 @@ interface Marketer {
   joinDate: string;
   tempPassword?: string;
   createdAt: string;
+  isTeamLead: boolean;
+  role: 'admin' | 'marketer' | 'team_lead';
 }
 
 interface NewMarketer {
@@ -24,6 +26,7 @@ interface NewMarketer {
   email: string;
   specialization: string;
   joinDate: string;
+  isTeamLead: boolean;
 }
 
 interface Offer {
@@ -52,6 +55,7 @@ const Marketers = () => {
     email: '',
     specialization: 'Workday',
     joinDate: new Date().toISOString().split('T')[0],
+    isTeamLead: false
   });
   
   // Load marketers from localStorage on component mount
@@ -65,7 +69,9 @@ const Marketers = () => {
         specialization: 'Workday',
         status: 'active',
         clients: 0,
-        joinDate: '2025-05-29'
+        joinDate: '2025-05-29',
+        isTeamLead: false,
+        role: 'marketer'
       }
     ];
   });
@@ -94,7 +100,9 @@ const Marketers = () => {
         email: newMarketer.email,
         specialization: newMarketer.specialization,
         joinDate: newMarketer.joinDate,
-        clients: 0
+        clients: 0,
+        isTeamLead: newMarketer.isTeamLead,
+        role: newMarketer.isTeamLead ? 'team_lead' : 'marketer'
       });
 
       // Send password email
@@ -120,6 +128,7 @@ const Marketers = () => {
         email: '',
         specialization: 'Workday',
         joinDate: new Date().toISOString().split('T')[0],
+        isTeamLead: false
       });
     } catch (error) {
       console.error('Error creating marketer:', error);
@@ -262,6 +271,7 @@ const Marketers = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Specialization</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Role</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Clients</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Join Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
@@ -302,6 +312,15 @@ const Marketers = () => {
                     >
                       {marketer.status}
                     </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-3 py-1 text-sm ${
+                      marketer.isTeamLead 
+                        ? 'bg-blue-500/20 text-blue-400' 
+                        : 'bg-gray-500/20 text-gray-400'
+                    } rounded-full`}>
+                      {marketer.isTeamLead ? 'Team Lead' : 'Marketer'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-300">{marketer.clients}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-300">
@@ -393,6 +412,18 @@ const Marketers = () => {
               onChange={(e) => setNewMarketer({ ...newMarketer, joinDate: e.target.value })}
               className="bg-white text-black"
             />
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="isTeamLead"
+              checked={newMarketer.isTeamLead}
+              onChange={(e) => setNewMarketer({ ...newMarketer, isTeamLead: e.target.checked })}
+              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+            />
+            <label htmlFor="isTeamLead" className="text-sm font-medium text-gray-300">
+              Assign as Team Lead
+            </label>
           </div>
           <div className="mt-6 flex justify-end space-x-3">
             <Button

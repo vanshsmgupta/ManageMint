@@ -1,420 +1,571 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Search, Filter, Plus, Briefcase, Calendar, MapPin } from 'lucide-react';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
-import Modal from '../../components/ui/Modal';
+import { Search, Plus, Eye, Pencil, Play, Download, X, Calendar, FileText, Link as LinkIcon, Trash, MessageCircle } from 'lucide-react';
+import Modal from '../../components/Modal';
 
 interface Offer {
   id: string;
-  title: string;
-  company: string;
-  location: string;
-  salary: string;
-  status: 'active' | 'pending' | 'closed';
-  date: string;
-  description?: string;
-  requirements?: string[];
-  startDate?: string;
-  endDate?: string;
-  rate?: number;
+  consultantName: string;
+  client: string;
+  vendor: string;
+  marketer: string;
+  inhouseEngineer: string;
+  technology: string;
+  startDate: string;
+  endDate: string;
+  resume: string;
+  timesheet: string;
+  status: 'ongoing' | 'pending';
 }
 
-interface NewOffer {
-  title: string;
-  company: string;
-  location: string;
-  salary: string;
-  description: string;
-  requirements: string;
+interface OfferFormData {
+  consultantName: string;
+  client: string;
+  vendor: string;
+  marketer: string;
+  inhouseEngineer: string;
+  technology: string;
   startDate: string;
-  rate: string;
+  endDate: string;
+  resume: File | null;
+  timesheet: File | null;
+}
+
+interface Vendor {
+  id: string;
+  companyName: string;
+  email: string;
+  type: string;
+}
+
+interface Client {
+  id: string;
+  companyName: string;
+  email: string;
+}
+
+interface IP {
+  id: string;
+  companyName: string;
+  email: string;
+  type: string;
 }
 
 const Offers = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newOffer, setNewOffer] = useState<NewOffer>({
-    title: '',
-    company: '',
-    location: '',
-    salary: '',
-    description: '',
-    requirements: '',
-    startDate: new Date().toISOString().split('T')[0],
-    rate: ''
-  });
-
-  // Load offers from localStorage
+  const [consultantFilter, setConsultantFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [projectTypeFilter, setProjectTypeFilter] = useState('');
+  const [createdByFilter, setCreatedByFilter] = useState('');
+  const [vendorFilter, setVendorFilter] = useState('');
+  const [clientFilter, setClientFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [activeFilter, setActiveFilter] = useState<'my' | 'team'>('my');
+  const [showAddModal, setShowAddModal] = useState(false);
   const [offers, setOffers] = useState<Offer[]>(() => {
-    const savedOffers = localStorage.getItem('marketer_offers');
-    return savedOffers ? JSON.parse(savedOffers) : [
-      {
-        id: '1',
-        title: 'Senior React Developer',
-        company: 'Tech Corp Inc.',
-        location: 'New York, NY',
-        salary: '$120k - $150k',
-        status: 'active',
-        date: '2024-03-15',
-      },
-      {
-        id: '2',
-        title: 'Full Stack Engineer',
-        company: 'Startup Co.',
-        location: 'Remote',
-        salary: '$100k - $130k',
-        status: 'pending',
-        date: '2024-03-14',
-      },
-      {
-        id: '3',
-        title: 'DevOps Engineer',
-        company: 'Enterprise Solutions',
-        location: 'San Francisco, CA',
-        salary: '$130k - $160k',
-        status: 'closed',
-        date: '2024-03-10',
-      },
-    ];
+    const savedOffers = localStorage.getItem('offers');
+    return savedOffers ? JSON.parse(savedOffers) : [];
+  });
+  const [formData, setFormData] = useState<OfferFormData>({
+    consultantName: '',
+    client: '',
+    vendor: '',
+    marketer: '',
+    inhouseEngineer: '',
+    technology: '',
+    startDate: '',
+    endDate: '',
+    resume: null,
+    timesheet: null
+  });
+  const [vendors, setVendors] = useState<Vendor[]>(() => {
+    const savedVendors = localStorage.getItem('vendors');
+    return savedVendors ? JSON.parse(savedVendors) : [];
+  });
+  const [clients, setClients] = useState<Client[]>(() => {
+    const savedClients = localStorage.getItem('clients');
+    return savedClients ? JSON.parse(savedClients) : [];
+  });
+  const [ips, setIPs] = useState<IP[]>(() => {
+    const savedIPs = localStorage.getItem('implementationPartners');
+    return savedIPs ? JSON.parse(savedIPs) : [];
   });
 
   // Save offers to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('marketer_offers', JSON.stringify(offers));
+    localStorage.setItem('offers', JSON.stringify(offers));
   }, [offers]);
 
-  const handleCreateOffer = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    
+    const newOffer: Offer = {
+      id: Date.now().toString(),
+      consultantName: formData.consultantName,
+      client: formData.client,
+      vendor: formData.vendor,
+      marketer: formData.marketer,
+      inhouseEngineer: formData.inhouseEngineer,
+      technology: formData.technology,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      resume: formData.resume?.name || '',
+      timesheet: formData.timesheet?.name || '',
+      status: 'pending'
+    };
 
-    try {
-      const offer: Offer = {
-        id: Math.random().toString(36).substr(2, 9),
-        ...newOffer,
-        status: 'active',
-        date: new Date().toISOString().split('T')[0],
-        requirements: newOffer.requirements.split('\n').filter(req => req.trim()),
-        rate: parseFloat(newOffer.rate)
-      };
+    setOffers(prev => [...prev, newOffer]);
+    setShowAddModal(false);
+    setFormData({
+      consultantName: '',
+      client: '',
+      vendor: '',
+      marketer: '',
+      inhouseEngineer: '',
+      technology: '',
+      startDate: '',
+      endDate: '',
+      resume: null,
+      timesheet: null
+    });
+  };
 
-      setOffers(prev => [offer, ...prev]);
-      setShowCreateModal(false);
-      
-      // Store in localStorage for the admin view
-      const userOffers = JSON.parse(localStorage.getItem(`offers_${localStorage.getItem('userId')}`) || '[]');
-      localStorage.setItem(`offers_${localStorage.getItem('userId')}`, JSON.stringify([...userOffers, offer]));
-
-      setNewOffer({
-        title: '',
-        company: '',
-        location: '',
-        salary: '',
-        description: '',
-        requirements: '',
-        startDate: new Date().toISOString().split('T')[0],
-        rate: ''
-      });
-    } catch (error) {
-      console.error('Error creating offer:', error);
-      alert('Error creating offer. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'joining pending':
+        return 'text-blue-400';
+      case 'ongoing':
+        return 'text-green-400';
+      case 'never started':
+        return 'text-red-400';
+      case 'terminated':
+        return 'text-red-400';
+      case 'completed':
+        return 'text-green-400';
+      default:
+        return 'text-gray-400';
     }
   };
 
-  const handleViewDetails = (offer: Offer) => {
-    setSelectedOffer(offer);
-    setShowDetailsModal(true);
-  };
-
-  const filteredOffers = offers.filter(offer => {
-    const matchesSearch = offer.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         offer.company.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filter === 'all' || offer.status === filter;
-    return matchesSearch && matchesFilter;
-  });
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+  const handleDownload = () => {
+    // Implement download logic
+    console.log('Downloading offers');
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-3">
+      {/* Header section */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Offers</h1>
-          <p className="text-gray-400">Manage and track your job offers</p>
+          <h1 className="text-xl font-bold text-white">Offers</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-blue-400 hover:underline cursor-pointer">Offers</span>
+            <span className="text-gray-500">→</span>
+            <span className="text-xs text-gray-400">List</span>
+          </div>
         </div>
-        <Button 
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Create Offer
-        </Button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleDownload}
+            className="p-1.5 text-gray-400 hover:text-white"
+            title="Download Offers"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg p-6">
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <Input
+      {/* Filters section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="flex items-center gap-2">
+          <Search className="w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Consultant"
+            value={consultantFilter}
+            onChange={(e) => setConsultantFilter(e.target.value)}
+            className="w-full px-3 py-1.5 bg-gray-800/50 border border-gray-700 rounded-lg text-xs text-gray-300"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-1.5 bg-gray-800/50 border border-gray-700 rounded-lg text-xs text-gray-300"
+        >
+          <option value="">Status</option>
+          <option value="pending">Pending</option>
+          <option value="ongoing">Ongoing</option>
+        </select>
+        <select
+          value={projectTypeFilter}
+          onChange={(e) => setProjectTypeFilter(e.target.value)}
+          className="px-3 py-1.5 bg-gray-800/50 border border-gray-700 rounded-lg text-xs text-gray-300"
+        >
+          <option value="">Project Type</option>
+        </select>
+        <div className="flex items-center gap-2">
+          <Search className="w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Created By"
+            value={createdByFilter}
+            onChange={(e) => setCreatedByFilter(e.target.value)}
+            className="w-full px-3 py-1.5 bg-gray-800/50 border border-gray-700 rounded-lg text-xs text-gray-300"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Search className="w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Vendor"
+            value={vendorFilter}
+            onChange={(e) => setVendorFilter(e.target.value)}
+            className="w-full px-3 py-1.5 bg-gray-800/50 border border-gray-700 rounded-lg text-xs text-gray-300"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Search className="w-4 h-4 text-gray-400" />
+          <input
               type="text"
-              placeholder="Search offers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500"
+            placeholder="Client"
+            value={clientFilter}
+            onChange={(e) => setClientFilter(e.target.value)}
+            className="w-full px-3 py-1.5 bg-gray-800/50 border border-gray-700 rounded-lg text-xs text-gray-300"
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="text-gray-400" size={20} />
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="bg-gray-700/50 border-gray-600 text-white rounded-md focus:ring-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="pending">Pending</option>
-              <option value="closed">Closed</option>
-            </select>
+          <Search className="w-4 h-4 text-gray-400" />
+          <input
+            type="date"
+            placeholder="Start Date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full px-3 py-1.5 bg-gray-800/50 border border-gray-700 rounded-lg text-xs text-gray-300"
+          />
           </div>
+        <div className="flex items-center gap-2">
+          <Search className="w-4 h-4 text-gray-400" />
+          <input
+            type="date"
+            placeholder="End Date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full px-3 py-1.5 bg-gray-800/50 border border-gray-700 rounded-lg text-xs text-gray-300"
+          />
         </div>
-
-        <div className="space-y-4">
-          {filteredOffers.map((offer) => (
-            <div
-              key={offer.id}
-              className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-gray-700/30 rounded-lg gap-4"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-blue-500" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">{offer.title}</h3>
-                  <p className="text-gray-400">{offer.company}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm text-gray-400">{offer.location}</span>
-                    <span className="text-sm text-gray-400">•</span>
-                    <span className="text-sm text-gray-400">{offer.salary}</span>
+        <div className="flex gap-2">
+          <button 
+            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700 flex items-center gap-1.5"
+            onClick={() => console.log('Applying filters')}
+          >
+            Apply
+            <Search className="w-3 h-3" />
+          </button>
+          <button 
+            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
+            onClick={() => setShowAddModal(true)}
+          >
+            Add New
+          </button>
                   </div>
                 </div>
+
+      {/* Offer Type Toggle */}
+      <div className="flex gap-4 border-b border-gray-700">
+        <button
+          onClick={() => setActiveFilter('my')}
+          className={`px-3 py-1.5 text-xs ${
+            activeFilter === 'my'
+              ? 'text-blue-400 border-b-2 border-blue-400'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          My Offers
+        </button>
+        <button
+          onClick={() => setActiveFilter('team')}
+          className={`px-3 py-1.5 text-xs ${
+            activeFilter === 'team'
+              ? 'text-blue-400 border-b-2 border-blue-400'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Team Offers
+        </button>
               </div>
-              <div className="flex items-center gap-4">
-                <span className={`px-3 py-1 text-sm rounded-full ${
-                  offer.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                  offer.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                  'bg-red-500/20 text-red-400'
-                }`}>
-                  {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
-                </span>
-                <Button 
-                  variant="outline" 
-                  className="border-gray-600 text-gray-400 hover:bg-gray-700"
-                  onClick={() => handleViewDetails(offer)}
-                >
-                  View Details
-                </Button>
+
+      {/* Offers Table */}
+      <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-700 bg-gray-800/50">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Consultant</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Client</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Vendor</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Marketer</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Engineer</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Technology</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Start Date</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">End Date</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700/50">
+              {offers.map((offer) => (
+                <tr key={offer.id} className="hover:bg-gray-700/20">
+                  <td className="px-3 py-2">
+                    <span className="text-xs text-blue-400 hover:underline cursor-pointer">
+                      {offer.consultantName}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="text-xs text-gray-300">{offer.client}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="text-xs text-gray-300">{offer.vendor}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="text-xs text-gray-300">{offer.marketer}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="text-xs text-gray-300">{offer.inhouseEngineer}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="text-xs text-gray-300">{offer.technology}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="text-xs text-gray-300">{offer.startDate}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="text-xs text-gray-300">{offer.endDate}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className={`text-xs ${getStatusColor(offer.status)}`}>
+                      {offer.status}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <button className="p-1 text-blue-400 hover:text-blue-300 rounded-md hover:bg-blue-500/10" title="Edit">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button className="p-1 text-blue-400 hover:text-blue-300 rounded-md hover:bg-blue-500/10" title="View">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button className="p-1 text-blue-400 hover:text-blue-300 rounded-md hover:bg-blue-500/10" title="Join Meeting">
+                        <Play className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
               </div>
             </div>
-          ))}
-        </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+        <span>0 of 0 items</span>
+        <button className="px-2 py-1 rounded hover:bg-gray-700">←</button>
+        <span>0</span>
+        <span>/</span>
+        <span>0</span>
+        <button className="px-2 py-1 rounded hover:bg-gray-700">→</button>
       </div>
 
+      {/* Add Offer Modal */}
       <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Create New Offer"
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add New Offer"
       >
-        <form onSubmit={handleCreateOffer} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Job Title</label>
-            <Input
-              type="text"
-              required
-              value={newOffer.title}
-              onChange={(e) => setNewOffer({ ...newOffer, title: e.target.value })}
-              placeholder="Enter job title"
-              className="bg-white text-black placeholder:text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Company</label>
-            <Input
-              type="text"
-              required
-              value={newOffer.company}
-              onChange={(e) => setNewOffer({ ...newOffer, company: e.target.value })}
-              placeholder="Enter company name"
-              className="bg-white text-black placeholder:text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Location</label>
-            <Input
-              type="text"
-              required
-              value={newOffer.location}
-              onChange={(e) => setNewOffer({ ...newOffer, location: e.target.value })}
-              placeholder="Enter job location"
-              className="bg-white text-black placeholder:text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Salary Range</label>
-            <Input
-              type="text"
-              required
-              value={newOffer.salary}
-              onChange={(e) => setNewOffer({ ...newOffer, salary: e.target.value })}
-              placeholder="e.g. $100k - $130k"
-              className="bg-white text-black placeholder:text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Hourly Rate</label>
-            <Input
-              type="number"
-              required
-              value={newOffer.rate}
-              onChange={(e) => setNewOffer({ ...newOffer, rate: e.target.value })}
-              placeholder="Enter hourly rate"
-              className="bg-white text-black placeholder:text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Start Date</label>
-            <Input
-              type="date"
-              required
-              value={newOffer.startDate}
-              onChange={(e) => setNewOffer({ ...newOffer, startDate: e.target.value })}
-              className="bg-white text-black"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Job Description</label>
-            <textarea
-              required
-              value={newOffer.description}
-              onChange={(e) => setNewOffer({ ...newOffer, description: e.target.value })}
-              placeholder="Enter job description"
-              className="w-full px-3 py-2 bg-white text-black border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-500"
-              rows={4}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Requirements (one per line)</label>
-            <textarea
-              required
-              value={newOffer.requirements}
-              onChange={(e) => setNewOffer({ ...newOffer, requirements: e.target.value })}
-              placeholder="Enter requirements (one per line)"
-              className="w-full px-3 py-2 bg-white text-black border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-500"
-              rows={4}
-            />
-          </div>
-          <div className="mt-6 flex justify-end space-x-3">
-            <Button
-              type="button"
-              onClick={() => setShowCreateModal(false)}
-              className="border border-gray-600 text-gray-300 hover:bg-gray-700/50"
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-2"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <span>Creating...</span>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                </>
-              ) : (
-                <span>Create Offer</span>
-              )}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Consultant Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="consultantName"
+                value={formData.consultantName}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+              />
+            </div>
 
-      <Modal
-        isOpen={showDetailsModal}
-        onClose={() => setShowDetailsModal(false)}
-        title="Offer Details"
-      >
-        {selectedOffer && (
-          <div className="space-y-6">
-            <div className="bg-gray-700/30 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-white">{selectedOffer.title}</h3>
-                <span className={`px-3 py-1 text-sm rounded-full ${
-                  selectedOffer.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                  selectedOffer.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                  'bg-red-500/20 text-red-400'
-                }`}>
-                  {selectedOffer.status.charAt(0).toUpperCase() + selectedOffer.status.slice(1)}
-                </span>
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Client <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="client"
+                value={formData.client}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+              >
+                <option value="">Select client...</option>
+                {clients.map(client => (
+                  <option key={client.id} value={client.id}>
+                    {client.companyName} - {client.email}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                  <p className="text-sm text-gray-400">Company</p>
-                  <p className="text-white">{selectedOffer.company}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Location</p>
-                  <p className="text-white">{selectedOffer.location}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Salary Range</p>
-                  <p className="text-white">{selectedOffer.salary}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Start Date</p>
-                  <p className="text-white">{new Date(selectedOffer.startDate || selectedOffer.date).toLocaleDateString()}</p>
-                </div>
-                {selectedOffer.rate && (
-                  <div>
-                    <p className="text-sm text-gray-400">Hourly Rate</p>
-                    <p className="text-green-400">{formatCurrency(selectedOffer.rate)}/hr</p>
-                  </div>
-                )}
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Vendor <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="vendor"
+                value={formData.vendor}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+              >
+                <option value="">Select vendor...</option>
+                {vendors.map(vendor => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.companyName} - {vendor.email}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              {selectedOffer.description && (
-                <div className="mb-6">
-                  <h4 className="text-lg font-medium text-white mb-2">Description</h4>
-                  <p className="text-gray-300 whitespace-pre-wrap">{selectedOffer.description}</p>
-                </div>
-              )}
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Marketer <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="marketer"
+                value={formData.marketer}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+              />
+            </div>
 
-              {selectedOffer.requirements && selectedOffer.requirements.length > 0 && (
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Requirements</h4>
-                  <ul className="list-disc list-inside space-y-1">
-                    {selectedOffer.requirements.map((req, index) => (
-                      <li key={index} className="text-gray-300">{req}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                In-house Engineer <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="inhouseEngineer"
+                value={formData.inhouseEngineer}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Technology <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="technology"
+                value={formData.technology}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Start Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                End Date
+              </label>
+              <input
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleInputChange}
+                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Resume <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="file"
+                name="resume"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setFormData(prev => ({ ...prev, resume: file }));
+                  }
+                }}
+                required
+                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Timesheet
+              </label>
+              <input
+                type="file"
+                name="timesheet"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setFormData(prev => ({ ...prev, timesheet: file }));
+                  }
+                }}
+                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+              />
             </div>
           </div>
-        )}
+
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className="px-3 py-1.5 bg-gray-700 text-white rounded-lg text-xs hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
+            >
+              Add Offer
+            </button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

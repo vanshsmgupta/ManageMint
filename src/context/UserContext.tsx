@@ -4,10 +4,11 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'user' | 'marketer';
+  role: 'user' | 'team_lead' | 'marketer';
   dob: string;
   doj: string;
   status: 'active' | 'inactive';
+  isTeamLead: boolean;
   tempPassword?: string;
 }
 
@@ -89,7 +90,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     setUsers([...users, newUser]);
     addActivity(
-      `New ${newUser.role === 'user' ? 'User' : 'Marketer'} Account Created`,
+      `New ${newUser.role === 'user' ? 'Engineer' : newUser.role === 'team_lead' ? 'Team Lead' : 'Marketer'} Account Created`,
       newUser.name
     );
 
@@ -112,7 +113,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const getUserStats = () => {
-    const totalUsers = users.filter(user => user.role === 'user' && user.status === 'active').length;
+    const totalUsers = users.filter(user => (user.role === 'user' || user.role === 'team_lead') && user.status === 'active').length;
     const totalMarketers = users.filter(user => user.role === 'marketer' && user.status === 'active').length;
     return { totalUsers, totalMarketers };
   };

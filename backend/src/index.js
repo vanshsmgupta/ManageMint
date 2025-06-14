@@ -1,46 +1,33 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import timesheetRoutes from './routes/timesheetRoutes.js';
-import meetingRoutes from './routes/meetingRoutes.js';
-import offerRoutes from './routes/offerRoutes.js';
-
-// Load environment variables
-dotenv.config();
+const express = require('express');
+const cors = require('cors');
+const { sequelize } = require('./models');
+require('dotenv').config();
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((error) => console.error('MongoDB connection error:', error));
+// Routes will be added here
+app.use('/api/marketers', require('./routes/marketers'));
+app.use('/api/consultants', require('./routes/consultants'));
+app.use('/api/profiles', require('./routes/profiles'));
+app.use('/api/clients', require('./routes/clients'));
+app.use('/api/vendors', require('./routes/vendors'));
+app.use('/api/pocs', require('./routes/pocs'));
+app.use('/api/ip', require('./routes/ip'));
+app.use('/api/submissions', require('./routes/submissions'));
+app.use('/api/assessments', require('./routes/assessments'));
+app.use('/api/offers', require('./routes/offers'));
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/timesheets', timesheetRoutes);
-app.use('/api/meetings', meetingRoutes);
-app.use('/api/offers', offerRoutes);
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    message: 'Internal Server Error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// Start server
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+
+// Sync database and start server
+sequelize.sync({ alter: true }).then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}).catch(err => {
+  console.error('Unable to connect to the database:', err);
 }); 

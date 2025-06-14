@@ -1,112 +1,108 @@
-import mongoose from 'mongoose';
+const { Model, DataTypes } = require('sequelize');
 
-const offerSchema = new mongoose.Schema({
-  consultantName: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  client: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  vendor: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  marketer: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  marketerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  inhouseEngineer: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  technology: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  startDate: {
-    type: Date,
-    required: true
-  },
-  endDate: {
-    type: Date
-  },
-  resume: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  timesheet: {
-    type: String,
-    trim: true
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'accepted', 'rejected', 'ongoing', 'completed'],
-    default: 'pending'
-  },
-  validUntil: {
-    type: Date,
-    required: true
-  },
-  terms: {
-    type: String,
-    required: true
-  },
-  value: {
-    amount: {
-      type: Number,
-      required: true
-    },
-    currency: {
-      type: String,
-      default: 'USD'
-    }
-  },
-  attachments: [{
-    name: String,
-    url: String,
-    uploadedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-  responseDate: {
-    type: Date
-  },
-  responseNotes: {
-    type: String
+class Offer extends Model {
+  static init(sequelize) {
+    return super.init({
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+      },
+      consultantId: {
+        type: DataTypes.UUID,
+        references: {
+          model: 'Consultants',
+          key: 'id'
+        },
+        allowNull: false
+      },
+      clientId: {
+        type: DataTypes.UUID,
+        references: {
+          model: 'Clients',
+          key: 'id'
+        },
+        allowNull: false
+      },
+      vendorId: {
+        type: DataTypes.UUID,
+        references: {
+          model: 'Vendors',
+          key: 'id'
+        },
+        allowNull: false
+      },
+      marketerId: {
+        type: DataTypes.UUID,
+        references: {
+          model: 'Marketers',
+          key: 'id'
+        },
+        allowNull: false
+      },
+      technology: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      startDate: {
+        type: DataTypes.DATE,
+        allowNull: false
+      },
+      endDate: {
+        type: DataTypes.DATE
+      },
+      resume: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      timesheet: {
+        type: DataTypes.STRING
+      },
+      status: {
+        type: DataTypes.ENUM('pending', 'accepted', 'rejected', 'ongoing', 'completed'),
+        defaultValue: 'pending'
+      },
+      validUntil: {
+        type: DataTypes.DATE,
+        allowNull: false
+      },
+      terms: {
+        type: DataTypes.TEXT,
+        allowNull: false
+      },
+      amount: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false
+      },
+      currency: {
+        type: DataTypes.STRING,
+        defaultValue: 'USD'
+      },
+      attachments: {
+        type: DataTypes.JSONB,
+        defaultValue: []
+      },
+      responseDate: {
+        type: DataTypes.DATE
+      },
+      responseNotes: {
+        type: DataTypes.TEXT
+      }
+    }, {
+      sequelize,
+      modelName: 'Offer',
+      timestamps: true,
+      indexes: [
+        { fields: ['marketerId'] },
+        { fields: ['consultantId'] },
+        { fields: ['status'] },
+        { fields: ['startDate'] },
+        { fields: ['clientId'] },
+        { fields: ['technology'] },
+        { fields: ['validUntil'] }
+      ]
+    });
   }
-}, {
-  timestamps: true
-});
+}
 
-// Indexes for efficient queries
-offerSchema.index({ marketerId: 1 });
-offerSchema.index({ userId: 1 });
-offerSchema.index({ status: 1 });
-offerSchema.index({ startDate: 1 });
-offerSchema.index({ client: 1 });
-offerSchema.index({ technology: 1 });
-offerSchema.index({ validUntil: 1 });
-
-const Offer = mongoose.model('Offer', offerSchema);
-
-export default Offer; 
+module.exports = Offer; 

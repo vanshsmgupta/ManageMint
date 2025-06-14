@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Badge from '../../components/ui/Badge';
+import Modal from '../../components/Modal';
 
 interface GeneratedOffer {
   id: string;
@@ -30,7 +31,7 @@ interface User {
   status: 'active' | 'inactive';
 }
 
-interface FormData {
+interface OfferFormData {
   consultantName: string;
   client: string;
   vendor: string;
@@ -41,6 +42,26 @@ interface FormData {
   endDate: string;
   resume: File | null;
   timesheet: File | null;
+}
+
+interface Vendor {
+  id: string;
+  companyName: string;
+  email: string;
+  type: string;
+}
+
+interface Client {
+  id: string;
+  companyName: string;
+  email: string;
+}
+
+interface IP {
+  id: string;
+  companyName: string;
+  email: string;
+  type: string;
 }
 
 // Mock data for development
@@ -74,6 +95,43 @@ const mockOffers: GeneratedOffer[] = [
   },
 ];
 
+const buttonStyles = `
+  .button-primary {
+    background-color: #9333EA;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .button-primary:hover {
+    background-color: #7928CA;
+  }
+
+  .button-primary:focus {
+    outline: none;
+    ring: 2px;
+    ring-offset: 2px;
+    ring-purple-500;
+  }
+
+  .button-secondary {
+    background-color: #6366F1;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .button-secondary:hover {
+    background-color: #5355E8;
+  }
+`;
+
 const OfferGenerated = () => {
   // Initialize offers from localStorage or fallback to empty array (not mock data)
   const [offers, setOffers] = useState<GeneratedOffer[]>(() => {
@@ -84,7 +142,7 @@ const OfferGenerated = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<OfferFormData>({
     consultantName: '',
     client: '',
     vendor: '',
@@ -99,7 +157,7 @@ const OfferGenerated = () => {
   const [selectedOffer, setSelectedOffer] = useState<GeneratedOffer | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editFormData, setEditFormData] = useState<FormData>({
+  const [editFormData, setEditFormData] = useState<OfferFormData>({
     consultantName: '',
     client: '',
     vendor: '',
@@ -110,6 +168,18 @@ const OfferGenerated = () => {
     endDate: '',
     resume: null,
     timesheet: null,
+  });
+  const [vendors, setVendors] = useState<Vendor[]>(() => {
+    const savedVendors = localStorage.getItem('vendors');
+    return savedVendors ? JSON.parse(savedVendors) : [];
+  });
+  const [clients, setClients] = useState<Client[]>(() => {
+    const savedClients = localStorage.getItem('clients');
+    return savedClients ? JSON.parse(savedClients) : [];
+  });
+  const [ips, setIPs] = useState<IP[]>(() => {
+    const savedIPs = localStorage.getItem('implementationPartners');
+    return savedIPs ? JSON.parse(savedIPs) : [];
   });
 
   // Fetch offers and users when component mounts
@@ -171,10 +241,35 @@ const OfferGenerated = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Form submission started'); // Debug log
+
+    // Validate required fields
+    if (!formData.consultantName || !formData.client || !formData.vendor || 
+        !formData.marketer || !formData.inhouseEngineer || !formData.technology || 
+        !formData.startDate || !formData.resume) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     try {
-      // Create new offer object with current timestamp
+      console.log('Validation passed, processing form...'); // Debug log
+      
+      // Show loading state
+      const loadingToast = toast.loading('Generating offer...');
+
+      // Create form data for file upload
+      const uploadFormData = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (formData[key]) {
+          uploadFormData.append(key, formData[key]);
+        }
+      });
+
+      // Create new offer object
       const newOffer: GeneratedOffer = {
         id: Math.random().toString(36).substr(2, 9),
         consultantName: formData.consultantName,
@@ -191,37 +286,61 @@ const OfferGenerated = () => {
         createdAt: new Date().toISOString(),
       };
 
-      try {
-        // Try to save to API first
-        await axios.post('/api/offers/generate', newOffer);
-        
-        // If API call succeeds, update local storage and state
-        const updatedOffers = [newOffer, ...offers];
-        localStorage.setItem('generatedOffers', JSON.stringify(updatedOffers));
-        setOffers(updatedOffers);
+      console.log('Uploading files...'); // Debug log
 
-        // Store in user's offers
-        const userOffersKey = `userOffers_${formData.inhouseEngineer}`;
-        const existingUserOffers = JSON.parse(localStorage.getItem(userOffersKey) || '[]');
-        localStorage.setItem(userOffersKey, JSON.stringify([newOffer, ...existingUserOffers]));
-
-      } catch (error) {
-        console.error('API call failed:', error);
-        // Even if API fails, still update localStorage and state
-        const updatedOffers = [newOffer, ...offers];
-        localStorage.setItem('generatedOffers', JSON.stringify(updatedOffers));
-        setOffers(updatedOffers);
-
-        // Store in user's offers
-        const userOffersKey = `userOffers_${formData.inhouseEngineer}`;
-        const existingUserOffers = JSON.parse(localStorage.getItem(userOffersKey) || '[]');
-        localStorage.setItem(userOffersKey, JSON.stringify([newOffer, ...existingUserOffers]));
+      // First upload files if any
+      let uploadedFiles = {};
+      if (formData.resume || formData.timesheet) {
+        try {
+          const uploadResponse = await axios.post('/api/offers/upload', uploadFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          uploadedFiles = uploadResponse.data;
+          console.log('Files uploaded successfully'); // Debug log
+        } catch (uploadError) {
+          console.error('File upload failed:', uploadError);
+          toast.error('Failed to upload files');
+          toast.dismiss(loadingToast);
+          return;
+        }
       }
+
+      console.log('Saving offer...'); // Debug log
+
+      // Then create the offer with file references
+      try {
+        await axios.post('/api/offers/generate', {
+          ...newOffer,
+          ...uploadedFiles,
+        });
+        console.log('Offer saved to API successfully'); // Debug log
+      } catch (apiError) {
+        console.error('API call failed:', apiError);
+        toast.error('Failed to save offer to server');
+        toast.dismiss(loadingToast);
+        return;
+      }
+
+      // Update local storage and state
+      const updatedOffers = [newOffer, ...offers];
+      localStorage.setItem('generatedOffers', JSON.stringify(updatedOffers));
+      setOffers(updatedOffers);
+
+      // Store in user's offers
+      const userOffersKey = `userOffers_${formData.inhouseEngineer}`;
+      const existingUserOffers = JSON.parse(localStorage.getItem(userOffersKey) || '[]');
+      localStorage.setItem(userOffersKey, JSON.stringify([newOffer, ...existingUserOffers]));
       
+      console.log('Local storage updated successfully'); // Debug log
+
+      // Dismiss loading toast and show success
+      toast.dismiss(loadingToast);
       toast.success('Offer generated successfully');
-      setShowAddModal(false);
       
-      // Reset form
+      // Close modal and reset form
+      setShowAddModal(false);
       setFormData({
         consultantName: '',
         client: '',
@@ -240,6 +359,8 @@ const OfferGenerated = () => {
       if (assignedUser) {
         toast.success(`Offer assigned to ${assignedUser.name}`);
       }
+
+      console.log('Form submission completed successfully'); // Debug log
 
     } catch (error) {
       console.error('Error generating offer:', error);
@@ -490,231 +611,207 @@ const OfferGenerated = () => {
         </div>
       </div>
 
-      {showAddModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-          <div className="bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white">Generate New Offer</h2>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Generate New Offer"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Consultant Name
+              </label>
+              <Input
+                name="consultantName"
+                value={formData.consultantName}
+                onChange={handleInputChange}
+                placeholder="Enter consultant's full name"
+                required
+                className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500"
+              />
             </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Consultant Name
-                  </label>
-                  <Input
-                    name="consultantName"
-                    value={formData.consultantName}
-                    onChange={handleInputChange}
-                    placeholder="Enter consultant's full name"
-                    required
-                    className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500"
-                  />
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Client
-                  </label>
-                  <Input
-                    name="client"
-                    value={formData.client}
-                    onChange={handleInputChange}
-                    placeholder="Enter client company name"
-                    required
-                    className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Client
+              </label>
+              <select
+                name="client"
+                value={formData.client}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-purple-500"
+              >
+                <option value="">Select client...</option>
+                {clients.map(client => (
+                  <option key={client.id} value={client.id}>
+                    {client.companyName} - {client.email}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Vendor
-                  </label>
-                  <Input
-                    name="vendor"
-                    value={formData.vendor}
-                    onChange={handleInputChange}
-                    placeholder="Enter vendor company name"
-                    required
-                    className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Vendor
+              </label>
+              <select
+                name="vendor"
+                value={formData.vendor}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-purple-500"
+              >
+                <option value="">Select vendor...</option>
+                {vendors.map(vendor => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.companyName} - {vendor.email}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Technology
-                  </label>
-                  <Input
-                    name="technology"
-                    value={formData.technology}
-                    onChange={handleInputChange}
-                    placeholder="Enter primary technology"
-                    required
-                    className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Technology
+              </label>
+              <Input
+                name="technology"
+                value={formData.technology}
+                onChange={handleInputChange}
+                placeholder="Enter technology"
+                required
+                className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500"
+              />
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Inhouse Engineer
-                  </label>
-                  <select
-                    name="inhouseEngineer"
-                    value={formData.inhouseEngineer}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-purple-500 focus:ring-purple-500 focus:ring-2 focus:outline-none"
-                  >
-                    <option value="" className="bg-gray-800">Select Engineer</option>
-                    {users.length > 0 ? (
-                      users.map(user => (
-                        <option 
-                          key={user.id} 
-                          value={user.id}
-                          className="bg-gray-800 text-white py-2"
-                        >
-                          {user.name}
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled className="bg-gray-800 text-gray-400">
-                        No engineers available
-                      </option>
-                    )}
-                  </select>
-                  {users.length === 0 && (
-                    <p className="mt-2 text-sm text-red-400">
-                      No engineers found. Please contact admin to add engineers.
-                    </p>
-                  )}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Inhouse Engineer
+              </label>
+              <select
+                name="inhouseEngineer"
+                value={formData.inhouseEngineer}
+                onChange={handleInputChange}
+                required
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg p-2 focus:border-purple-500"
+              >
+                <option value="">Select Inhouse Engineer</option>
+                {users.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Marketer
-                  </label>
-                  <Input
-                    name="marketer"
-                    value={formData.marketer}
-                    onChange={handleInputChange}
-                    placeholder="Enter marketer's name"
-                    required
-                    className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Marketer
+              </label>
+              <Input
+                name="marketer"
+                value={formData.marketer}
+                onChange={handleInputChange}
+                placeholder="Enter marketer's name"
+                required
+                className="w-full bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500"
+              />
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Start Date
-                  </label>
-                  <Input
-                    type="date"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full bg-gray-800 border-gray-700 text-white focus:border-purple-500"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Start Date
+              </label>
+              <Input
+                type="date"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleInputChange}
+                required
+                className="w-full bg-gray-800 border-gray-700 text-white focus:border-purple-500"
+              />
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    End Date (Optional)
-                  </label>
-                  <Input
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleInputChange}
-                    className="w-full bg-gray-800 border-gray-700 text-white focus:border-purple-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Resume
-                  </label>
-                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-700 border-dashed rounded-lg hover:border-purple-500 transition-colors cursor-pointer">
-                    <div className="space-y-2 text-center">
-                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-400">
-                        <label htmlFor="resume" className="relative cursor-pointer rounded-md font-medium text-purple-500 hover:text-purple-400">
-                          <span>Upload a file</span>
-                          <input
-                            id="resume"
-                            name="resume"
-                            type="file"
-                            className="sr-only"
-                            onChange={(e) => handleFileChange(e, 'resume')}
-                            accept=".pdf,.doc,.docx"
-                          />
-                        </label>
-                        <p className="pl-1">or drag and drop</p>
-                      </div>
-                      <p className="text-xs text-gray-400">
-                        PDF, DOC up to 10MB
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Timesheet
-                  </label>
-                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-700 border-dashed rounded-lg hover:border-purple-500 transition-colors cursor-pointer">
-                    <div className="space-y-2 text-center">
-                      <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-400">
-                        <label htmlFor="timesheet" className="relative cursor-pointer rounded-md font-medium text-purple-500 hover:text-purple-400">
-                          <span>Upload a file</span>
-                          <input
-                            id="timesheet"
-                            name="timesheet"
-                            type="file"
-                            className="sr-only"
-                            onChange={(e) => handleFileChange(e, 'timesheet')}
-                            accept=".pdf,.xls,.xlsx"
-                          />
-                        </label>
-                        <p className="pl-1">or drag and drop</p>
-                      </div>
-                      <p className="text-xs text-gray-400">
-                        PDF, Excel up to 10MB
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-4 mt-6">
-                <Button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded-lg"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 rounded-lg"
-                >
-                  Generate Offer
-                </Button>
-              </div>
-            </form>
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                End Date (Optional)
+              </label>
+              <Input
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleInputChange}
+                className="w-full bg-gray-800 border-gray-700 text-white focus:border-purple-500"
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="col-span-2 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Resume (Required)
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => handleFileChange(e, 'resume')}
+                  required
+                  className="w-full bg-gray-800 border-gray-700 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                />
+                {formData.resume && (
+                  <span className="text-sm text-gray-400">
+                    {formData.resume.name}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-sm text-gray-400">
+                Accepted formats: PDF, DOC, DOCX (Max 10MB)
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Timesheet (Optional)
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept=".pdf,.xls,.xlsx"
+                  onChange={(e) => handleFileChange(e, 'timesheet')}
+                  className="w-full bg-gray-800 border-gray-700 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                />
+                {formData.timesheet && (
+                  <span className="text-sm text-gray-400">
+                    {formData.timesheet.name}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-sm text-gray-400">
+                Accepted formats: PDF, XLS, XLSX (Max 10MB)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-4 mt-6">
+            <button
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className="px-6 py-3 bg-gray-600 text-white hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-3 bg-purple-600 text-white hover:bg-purple-700 rounded-lg transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+            >
+              Generate Offer
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* View Details Modal */}
       {showDetailsModal && selectedOffer && (

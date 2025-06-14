@@ -1,6 +1,6 @@
 const { Model, DataTypes } = require('sequelize');
 
-class Marketer extends Model {
+class Profile extends Model {
   static init(sequelize) {
     return super.init({
       id: {
@@ -8,49 +8,52 @@ class Marketer extends Model {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
       },
-      firstName: {
+      consultantId: {
+        type: DataTypes.UUID,
+        references: {
+          model: 'Consultants',
+          key: 'id'
+        },
+        allowNull: false
+      },
+      technologies: {
+        type: DataTypes.ARRAY(DataTypes.STRING),
+        defaultValue: []
+      },
+      workAuth: {
         type: DataTypes.STRING,
         allowNull: false
       },
-      lastName: {
+      marketingEmail: {
         type: DataTypes.STRING,
-        allowNull: false
-      },
-      email: {
-        type: DataTypes.STRING,
-        allowNull: false,
         unique: true,
         validate: {
           isEmail: true
         }
       },
-      password: {
-        type: DataTypes.STRING,
-        allowNull: false
-      },
-      phoneNumber: {
+      emailPassword: {
         type: DataTypes.STRING
       },
-      profilePicture: {
+      isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+      },
+      adHoc: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
+      resumes: {
         type: DataTypes.STRING
       },
-      role: {
-        type: DataTypes.ENUM('admin', 'marketer', 'team_lead'),
-        defaultValue: 'marketer'
-      },
-      status: {
-        type: DataTypes.ENUM('active', 'inactive'),
-        defaultValue: 'active'
-      },
-      isTeamLead: {
+      educations: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
       }
     }, {
       sequelize,
-      modelName: 'Marketer'
+      modelName: 'Profile'
     });
   }
 }
 
-module.exports = Marketer; 
+module.exports = Profile; 

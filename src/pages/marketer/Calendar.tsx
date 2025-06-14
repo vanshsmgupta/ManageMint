@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Eye, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import Modal from '../../components/Modal';
 
 interface Meeting {
   id: string;
@@ -198,146 +199,144 @@ const Calendar = () => {
         </div>
       </div>
 
-      {/* Add Meeting Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
-            <h2 className="text-xl font-bold mb-4 text-white">Add Event</h2>
-            <form onSubmit={handleAddMeeting} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Title</label>
-                <input
-                  type="text"
-                  className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                  value={newMeeting.title}
-                  onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
-                  required
-                />
-              </div>
-
-              {/* Assignee Type Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Assign To Type</label>
-                <select
-                  className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                  value={newMeeting.assigneeType}
-                  onChange={(e) => {
-                    setNewMeeting({
-                      ...newMeeting,
-                      assigneeType: e.target.value as 'user' | 'marketer',
-                      assignedTo: '',
-                      assignedToName: ''
-                    });
-                  }}
-                  required
-                >
-                  <option value="user">User</option>
-                  <option value="marketer">Marketer</option>
-                </select>
-              </div>
-              
-              {/* Assign To Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Assign To</label>
-                <select
-                  className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                  value={newMeeting.assignedTo}
-                  onChange={(e) => {
-                    const list = newMeeting.assigneeType === 'marketer' ? marketers : users;
-                    const assignee = list.find(m => m.id === e.target.value);
-                    setNewMeeting({
-                      ...newMeeting,
-                      assignedTo: e.target.value,
-                      assignedToName: assignee ? assignee.name : ''
-                    });
-                  }}
-                  required
-                >
-                  <option value="">Select {newMeeting.assigneeType === 'marketer' ? 'a marketer' : 'a user'}</option>
-                  {(newMeeting.assigneeType === 'marketer' ? marketers : users).map(person => (
-                    <option key={person.id} value={person.id}>
-                      {person.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Date</label>
-                <input
-                  type="date"
-                  className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                  value={newMeeting.date}
-                  onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Start Time</label>
-                  <input
-                    type="time"
-                    className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                    value={newMeeting.startTime}
-                    onChange={(e) => setNewMeeting({ ...newMeeting, startTime: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">End Time</label>
-                  <input
-                    type="time"
-                    className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                    value={newMeeting.endTime}
-                    onChange={(e) => setNewMeeting({ ...newMeeting, endTime: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Type</label>
-                <select
-                  className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                  value={newMeeting.type}
-                  onChange={(e) => setNewMeeting({ ...newMeeting, type: e.target.value as 'meeting' | 'call' })}
-                  required
-                >
-                  <option value="meeting">Meeting</option>
-                  <option value="call">Call</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Description</label>
-                <textarea
-                  className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                  rows={3}
-                  value={newMeeting.description}
-                  onChange={(e) => setNewMeeting({ ...newMeeting, description: e.target.value })}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-gray-600 text-gray-300 hover:bg-gray-700/50 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded-lg transition-colors"
-                >
-                  Add Event
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add Event"
+      >
+        <form onSubmit={handleAddMeeting} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300">Title</label>
+            <input
+              type="text"
+              className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+              value={newMeeting.title}
+              onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
+              required
+            />
           </div>
-        </div>
-      )}
+
+          {/* Assignee Type Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300">Assign To Type</label>
+            <select
+              className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+              value={newMeeting.assigneeType}
+              onChange={(e) => {
+                setNewMeeting({
+                  ...newMeeting,
+                  assigneeType: e.target.value as 'user' | 'marketer',
+                  assignedTo: '',
+                  assignedToName: ''
+                });
+              }}
+              required
+            >
+              <option value="user">User</option>
+              <option value="marketer">Marketer</option>
+            </select>
+          </div>
+          
+          {/* Assign To Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300">Assign To</label>
+            <select
+              className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+              value={newMeeting.assignedTo}
+              onChange={(e) => {
+                const list = newMeeting.assigneeType === 'marketer' ? marketers : users;
+                const assignee = list.find(m => m.id === e.target.value);
+                setNewMeeting({
+                  ...newMeeting,
+                  assignedTo: e.target.value,
+                  assignedToName: assignee ? assignee.name : ''
+                });
+              }}
+              required
+            >
+              <option value="">Select {newMeeting.assigneeType === 'marketer' ? 'a marketer' : 'a user'}</option>
+              {(newMeeting.assigneeType === 'marketer' ? marketers : users).map(person => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300">Date</label>
+            <input
+              type="date"
+              className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+              value={newMeeting.date}
+              onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300">Start Time</label>
+              <input
+                type="time"
+                className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                value={newMeeting.startTime}
+                onChange={(e) => setNewMeeting({ ...newMeeting, startTime: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300">End Time</label>
+              <input
+                type="time"
+                className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                value={newMeeting.endTime}
+                onChange={(e) => setNewMeeting({ ...newMeeting, endTime: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300">Type</label>
+            <select
+              className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+              value={newMeeting.type}
+              onChange={(e) => setNewMeeting({ ...newMeeting, type: e.target.value as 'meeting' | 'call' })}
+              required
+            >
+              <option value="meeting">Meeting</option>
+              <option value="call">Call</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300">Description</label>
+            <textarea
+              className="mt-1 block w-full px-3 py-2 bg-gray-700/50 border-gray-600 text-white rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+              rows={3}
+              value={newMeeting.description}
+              onChange={(e) => setNewMeeting({ ...newMeeting, description: e.target.value })}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className="px-3 py-1.5 bg-gray-700 text-white rounded-lg text-xs hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
+            >
+              Add Event
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

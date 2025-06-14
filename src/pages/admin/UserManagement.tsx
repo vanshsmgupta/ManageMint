@@ -13,6 +13,8 @@ interface User {
   status: 'active' | 'inactive';
   dob: string;
   doj: string;
+  isTeamLead: boolean;
+  role: 'user' | 'team_lead' | 'marketer';
 }
 
 interface NewUser {
@@ -20,7 +22,8 @@ interface NewUser {
   email: string;
   dateOfBirth: string;
   joinDate: string;
-  role: 'user' | 'marketer';
+  role: 'user' | 'team_lead' | 'marketer';
+  isTeamLead: boolean;
 }
 
 interface Offer {
@@ -49,7 +52,8 @@ const UserManagement = () => {
     email: '',
     dateOfBirth: '',
     joinDate: new Date().toISOString().split('T')[0],
-    role: 'user'
+    role: 'user',
+    isTeamLead: false
   });
 
   const handleUserClick = (user: User) => {
@@ -70,7 +74,8 @@ const UserManagement = () => {
         email: newUser.email,
         dob: newUser.dateOfBirth,
         doj: newUser.joinDate,
-        role: newUser.role
+        role: newUser.isTeamLead ? 'team_lead' : 'user',
+        isTeamLead: newUser.isTeamLead
       });
       
       // Send password email
@@ -95,7 +100,8 @@ const UserManagement = () => {
         email: '',
         dateOfBirth: '',
         joinDate: new Date().toISOString().split('T')[0],
-        role: 'user'
+        role: 'user',
+        isTeamLead: false
       });
     } catch (error) {
       console.error('Error creating user:', error);
@@ -215,26 +221,15 @@ const UserManagement = () => {
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-700">
-            <thead className="bg-gray-700/50">
+            <thead className="bg-gray-700/30">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Date of Birth
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Join Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">DOB</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Join Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
@@ -269,6 +264,15 @@ const UserManagement = () => {
                     >
                       {user.status}
                     </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-3 py-1 text-sm ${
+                      user.isTeamLead 
+                        ? 'bg-blue-500/20 text-blue-400' 
+                        : 'bg-gray-500/20 text-gray-400'
+                    } rounded-full`}>
+                      {user.isTeamLead ? 'Team Lead' : 'Engineer'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-300">
                     {new Date(user.dob).toLocaleDateString()}
@@ -315,63 +319,75 @@ const UserManagement = () => {
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title="Add New User"
+        title="Add New Engineer"
       >
-        <form onSubmit={handleAddUser} className="space-y-3">
+        <form onSubmit={handleAddUser} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Name</label>
             <Input
               type="text"
               required
               value={newUser.name}
               onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-              placeholder="Enter user name"
-              className="bg-white text-black placeholder:text-gray-500 h-9"
+              placeholder="Enter engineer name"
+              className="bg-white text-black placeholder:text-gray-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
             <Input
               type="email"
               required
               value={newUser.email}
               onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
               placeholder="Enter email address"
-              className="bg-white text-black placeholder:text-gray-500 h-9"
+              className="bg-white text-black placeholder:text-gray-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Date of Birth</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Date of Birth</label>
             <Input
               type="date"
               required
               value={newUser.dateOfBirth}
               onChange={(e) => setNewUser({ ...newUser, dateOfBirth: e.target.value })}
-              className="bg-white text-black h-9"
+              className="bg-white text-black"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Join Date</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Join Date</label>
             <Input
               type="date"
               required
               value={newUser.joinDate}
               onChange={(e) => setNewUser({ ...newUser, joinDate: e.target.value })}
-              className="bg-white text-black h-9"
+              className="bg-white text-black"
             />
           </div>
-          <div className="mt-4 flex justify-end space-x-3">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="isTeamLead"
+              checked={newUser.isTeamLead}
+              onChange={(e) => setNewUser({ ...newUser, isTeamLead: e.target.checked })}
+              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+            />
+            <label htmlFor="isTeamLead" className="text-sm font-medium text-gray-300">
+              Assign as Team Lead
+            </label>
+          </div>
+          <div className="mt-6 flex justify-end space-x-3">
             <Button
               type="button"
               onClick={() => setShowAddModal(false)}
-              className="px-3 py-1.5 border border-gray-600 text-gray-300 hover:bg-gray-700/50 rounded-md"
+              className="border border-gray-600 text-gray-300 hover:bg-gray-700/50"
               disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-md flex items-center space-x-2"
+              className="bg-purple-600 hover:bg-purple-700 text-white flex items-center space-x-2"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -380,7 +396,7 @@ const UserManagement = () => {
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 </>
               ) : (
-                <span>Add User</span>
+                <span>Add Engineer</span>
               )}
             </Button>
           </div>

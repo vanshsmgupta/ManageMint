@@ -6,6 +6,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: UserRole;
+  isTeamLead: boolean;
   profilePicture?: string;
   phoneNumber?: string;
   dateOfBirth: Date;
@@ -88,4 +89,5 @@ export interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   isMarketer: boolean;
+  isTeamLead: boolean;
 }
