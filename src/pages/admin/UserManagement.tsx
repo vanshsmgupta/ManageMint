@@ -266,13 +266,26 @@ const UserManagement = () => {
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 text-sm ${
-                      user.isTeamLead 
-                        ? 'bg-blue-500/20 text-blue-400' 
-                        : 'bg-gray-500/20 text-gray-400'
-                    } rounded-full`}>
-                      {user.isTeamLead ? 'Team Lead' : 'Engineer'}
-                    </span>
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          const newRole = user.isTeamLead ? 'user' : 'team_lead';
+                          if (window.confirm(`Are you sure you want to change ${user.name}'s role to ${newRole.replace('_', ' ')}?`)) {
+                            updateUser(user.id, {
+                              isTeamLead: !user.isTeamLead,
+                              role: newRole
+                            });
+                          }
+                        }}
+                        className={`px-3 py-1 text-sm ${
+                          user.isTeamLead 
+                            ? 'bg-blue-500/20 text-blue-400' 
+                            : 'bg-gray-500/20 text-gray-400'
+                        } rounded-full hover:bg-opacity-30 transition-colors`}
+                      >
+                        {user.isTeamLead ? 'Team Lead' : 'Engineer'}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-300">
                     {new Date(user.dob).toLocaleDateString()}
@@ -363,18 +376,6 @@ const UserManagement = () => {
               onChange={(e) => setNewUser({ ...newUser, joinDate: e.target.value })}
               className="bg-white text-black"
             />
-          </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="isTeamLead"
-              checked={newUser.isTeamLead}
-              onChange={(e) => setNewUser({ ...newUser, isTeamLead: e.target.checked })}
-              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-            />
-            <label htmlFor="isTeamLead" className="text-sm font-medium text-gray-300">
-              Assign as Team Lead
-            </label>
           </div>
           <div className="mt-6 flex justify-end space-x-3">
             <Button

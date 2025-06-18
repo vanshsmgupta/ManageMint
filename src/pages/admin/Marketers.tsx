@@ -314,13 +314,26 @@ const Marketers = () => {
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 text-sm ${
-                      marketer.isTeamLead 
-                        ? 'bg-blue-500/20 text-blue-400' 
-                        : 'bg-gray-500/20 text-gray-400'
-                    } rounded-full`}>
-                      {marketer.isTeamLead ? 'Team Lead' : 'Marketer'}
-                    </span>
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          const newRole = marketer.isTeamLead ? 'marketer' : 'team_lead';
+                          if (window.confirm(`Are you sure you want to change ${marketer.name}'s role to ${newRole.replace('_', ' ')}?`)) {
+                            updateMarketer(marketer.id, {
+                              isTeamLead: !marketer.isTeamLead,
+                              role: newRole
+                            });
+                          }
+                        }}
+                        className={`px-3 py-1 text-sm ${
+                          marketer.isTeamLead 
+                            ? 'bg-blue-500/20 text-blue-400' 
+                            : 'bg-gray-500/20 text-gray-400'
+                        } rounded-full hover:bg-opacity-30 transition-colors`}
+                      >
+                        {marketer.isTeamLead ? 'Team Lead' : 'Marketer'}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-300">{marketer.clients}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-300">
@@ -412,18 +425,6 @@ const Marketers = () => {
               onChange={(e) => setNewMarketer({ ...newMarketer, joinDate: e.target.value })}
               className="bg-white text-black"
             />
-          </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="isTeamLead"
-              checked={newMarketer.isTeamLead}
-              onChange={(e) => setNewMarketer({ ...newMarketer, isTeamLead: e.target.checked })}
-              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-            />
-            <label htmlFor="isTeamLead" className="text-sm font-medium text-gray-300">
-              Assign as Team Lead
-            </label>
           </div>
           <div className="mt-6 flex justify-end space-x-3">
             <Button

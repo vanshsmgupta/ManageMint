@@ -547,8 +547,10 @@ const Profiles = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-end items-center gap-4 text-sm text-gray-400">
-        <span>{filteredProfiles.length} of {profiles.filter(p => activeFilter === 'team' ? p.isTeamProfile : !p.isTeamProfile).length} items</span>
+      <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
+        <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg px-4 py-2">
+          <span>{filteredProfiles.length} of {profiles.filter(p => activeFilter === 'team' ? p.isTeamProfile : !p.isTeamProfile).length} items</span>
+        </div>
         <div className="flex items-center gap-2">
           <button
             className="p-1 hover:bg-gray-700 rounded disabled:opacity-50"

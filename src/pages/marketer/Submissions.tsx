@@ -440,13 +440,17 @@ const Submissions = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-        <span>0 of 0 items</span>
-        <button className="px-2 py-1 rounded hover:bg-gray-700">←</button>
-        <span>0</span>
-        <span>/</span>
-        <span>0</span>
-        <button className="px-2 py-1 rounded hover:bg-gray-700">→</button>
+      <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
+        <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg px-4 py-2">
+          <span>{submissions.length} of {submissions.length} items</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="px-2 py-1 rounded hover:bg-gray-700">←</button>
+          <span>{submissions.length > 0 ? 1 : 0}</span>
+          <span>/</span>
+          <span>{Math.ceil(submissions.length / 10)}</span>
+          <button className="px-2 py-1 rounded hover:bg-gray-700">→</button>
+        </div>
       </div>
 
       {/* Add Submission Modal */}

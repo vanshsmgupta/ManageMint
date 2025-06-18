@@ -45,36 +45,36 @@ const Dashboard = () => {
     };
   });
 
-  const stats = [
+  const [stats, setStats] = useState([
     {
       title: 'Active Consultants',
-      value: '12',
+      value: '0',
       icon: <Users className="w-6 h-6 text-blue-400" />,
-      change: '+20%',
-      changeType: 'positive'
+      change: '0%',
+      changeType: 'neutral'
     },
     {
       title: 'Submissions',
-      value: '45',
+      value: '0',
       icon: <Send className="w-6 h-6 text-green-400" />,
-      change: '+15%',
-      changeType: 'positive'
+      change: '0%',
+      changeType: 'neutral'
     },
     {
       title: 'Assessments',
-      value: '28',
+      value: '0',
       icon: <CheckSquare className="w-6 h-6 text-purple-400" />,
-      change: '+5%',
+      change: '0%',
       changeType: 'neutral'
     },
     {
       title: 'Active Offers',
-      value: '8',
+      value: '0',
       icon: <DollarSign className="w-6 h-6 text-yellow-400" />,
-      change: '+30%',
-      changeType: 'positive'
+      change: '0%',
+      changeType: 'neutral'
     }
-  ];
+  ]);
 
   // Sample data for charts
   const submissionsData = [
@@ -121,6 +121,79 @@ const Dashboard = () => {
   useEffect(() => {
     localStorage.setItem('marketerDashboardPreferences', JSON.stringify(preferences));
   }, [preferences]);
+
+  useEffect(() => {
+    // Load data from localStorage
+    const loadStats = () => {
+      const consultants = JSON.parse(localStorage.getItem('consultants') || '[]');
+      const submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
+      const assessments = JSON.parse(localStorage.getItem('assessments') || '[]');
+      const offers = JSON.parse(localStorage.getItem('offers') || '[]');
+
+      // Calculate changes from previous month
+      const now = new Date();
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
+
+      const activeConsultants = consultants.filter((c: any) => c.status === 'active').length;
+      const activeSubmissions = submissions.filter((s: any) => s.status === 'active').length;
+      const activeAssessments = assessments.filter((a: any) => a.status === 'active').length;
+      const activeOffers = offers.filter((o: any) => o.status === 'active').length;
+
+      const lastMonthSubmissions = submissions.filter((s: any) => {
+        const date = new Date(s.createdAt);
+        return date.getMonth() === lastMonth.getMonth() && date.getFullYear() === lastMonth.getFullYear();
+      }).length;
+
+      const lastMonthAssessments = assessments.filter((a: any) => {
+        const date = new Date(a.createdAt);
+        return date.getMonth() === lastMonth.getMonth() && date.getFullYear() === lastMonth.getFullYear();
+      }).length;
+
+      const lastMonthOffers = offers.filter((o: any) => {
+        const date = new Date(o.createdAt);
+        return date.getMonth() === lastMonth.getMonth() && date.getFullYear() === lastMonth.getFullYear();
+      }).length;
+
+      const calculateChange = (current: number, previous: number) => {
+        if (previous === 0) return { value: '0', type: 'neutral' };
+        const change = ((current - previous) / previous) * 100;
+        return {
+          value: `${Math.abs(change).toFixed(0)}%`,
+          type: change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral'
+        };
+      };
+
+      setStats([
+        {
+          title: 'Active Consultants',
+          value: activeConsultants.toString(),
+          icon: <Users className="w-6 h-6 text-blue-400" />,
+          change: '0%',
+          changeType: 'neutral'
+        },
+        {
+          title: 'Submissions',
+          value: activeSubmissions.toString(),
+          icon: <Send className="w-6 h-6 text-green-400" />,
+          ...calculateChange(activeSubmissions, lastMonthSubmissions)
+        },
+        {
+          title: 'Assessments',
+          value: activeAssessments.toString(),
+          icon: <CheckSquare className="w-6 h-6 text-purple-400" />,
+          ...calculateChange(activeAssessments, lastMonthAssessments)
+        },
+        {
+          title: 'Active Offers',
+          value: activeOffers.toString(),
+          icon: <DollarSign className="w-6 h-6 text-yellow-400" />,
+          ...calculateChange(activeOffers, lastMonthOffers)
+        }
+      ]);
+    };
+
+    loadStats();
+  }, []);
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;

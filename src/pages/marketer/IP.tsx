@@ -40,6 +40,16 @@ const IP = () => {
     city: '',
     state: ''
   });
+  const [editingIP, setEditingIP] = useState<IP | null>(null);
+  const [editFormData, setEditFormData] = useState<Omit<IP, 'id' | 'addedDate'>>({
+    companyName: '',
+    website: '',
+    email: '',
+    type: 'ip',
+    street: '',
+    city: '',
+    state: ''
+  });
 
   // Save IPs to localStorage whenever they change
   useEffect(() => {
@@ -76,6 +86,40 @@ const IP = () => {
       city: '',
       state: ''
     });
+  };
+
+  const handleEditClick = (ip: IP) => {
+    setEditingIP(ip);
+    setEditFormData({
+      companyName: ip.companyName,
+      website: ip.website,
+      email: ip.email,
+      type: ip.type,
+      street: ip.street,
+      city: ip.city,
+      state: ip.state
+    });
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditIP = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingIP) return;
+
+    const updatedIP: IP = {
+      ...editingIP,
+      ...editFormData
+    };
+
+    setIPs(prev => prev.map(i => i.id === editingIP.id ? updatedIP : i));
+    setEditingIP(null);
   };
 
   const filteredIPs = ips.filter(ip => 
@@ -161,7 +205,11 @@ const IP = () => {
                     <span className="text-xs text-gray-300">{ip.state}</span>
                   </td>
                   <td className="px-4 py-2">
-                    <button className="p-1 text-blue-400 hover:text-blue-300 rounded-md hover:bg-blue-500/10" title="Edit">
+                    <button 
+                      onClick={() => handleEditClick(ip)}
+                      className="p-1 text-blue-400 hover:text-blue-300 rounded-md hover:bg-blue-500/10" 
+                      title="Edit"
+                    >
                       <Pencil className="w-4 h-4" />
                     </button>
                   </td>
@@ -173,13 +221,17 @@ const IP = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-        <span>0 of 0 items</span>
-        <button className="px-2 py-1 rounded hover:bg-gray-700">←</button>
-        <span>0</span>
-        <span>/</span>
-        <span>0</span>
-        <button className="px-2 py-1 rounded hover:bg-gray-700">→</button>
+      <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
+        <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg px-4 py-2">
+          <span>{filteredIPs.length} of {ips.length} items</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="px-2 py-1 rounded hover:bg-gray-700">←</button>
+          <span>{ips.length > 0 ? 1 : 0}</span>
+          <span>/</span>
+          <span>{Math.ceil(ips.length / 10)}</span>
+          <button className="px-2 py-1 rounded hover:bg-gray-700">→</button>
+        </div>
       </div>
 
       {/* Add IP Modal */}
@@ -303,6 +355,105 @@ const IP = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Edit Modal */}
+      {editingIP && (
+        <Modal title="Edit IP" isOpen={true} onClose={() => setEditingIP(null)}>
+          <form onSubmit={handleEditIP} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  Company Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="companyName"
+                  value={editFormData.companyName}
+                  onChange={handleEditInputChange}
+                  required
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  Website
+                </label>
+                <input
+                  type="url"
+                  name="website"
+                  value={editFormData.website}
+                  onChange={handleEditInputChange}
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editFormData.email}
+                  onChange={handleEditInputChange}
+                  required
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  Street
+                </label>
+                <input
+                  type="text"
+                  name="street"
+                  value={editFormData.street}
+                  onChange={handleEditInputChange}
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  City
+                </label>
+                <input
+                  type="text"
+                  name="city"
+                  value={editFormData.city}
+                  onChange={handleEditInputChange}
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  State
+                </label>
+                <input
+                  type="text"
+                  name="state"
+                  value={editFormData.state}
+                  onChange={handleEditInputChange}
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setEditingIP(null)}
+                className="px-3 py-1.5 bg-gray-700 text-white rounded-lg text-xs hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };

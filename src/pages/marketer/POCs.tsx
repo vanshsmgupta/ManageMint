@@ -41,6 +41,16 @@ const POCs = () => {
     position: '',
     client: ''
   });
+  const [editingPOC, setEditingPOC] = useState<POC | null>(null);
+  const [editFormData, setEditFormData] = useState<Omit<POC, 'id' | 'addedDate'>>({
+    contactName: '',
+    phone: '',
+    alternatePhone: '',
+    email: '',
+    type: '',
+    position: '',
+    client: ''
+  });
 
   // Save POCs to localStorage whenever they change
   useEffect(() => {
@@ -77,6 +87,40 @@ const POCs = () => {
       position: '',
       client: ''
     });
+  };
+
+  const handleEditClick = (poc: POC) => {
+    setEditingPOC(poc);
+    setEditFormData({
+      contactName: poc.contactName,
+      phone: poc.phone,
+      alternatePhone: poc.alternatePhone,
+      email: poc.email,
+      type: poc.type,
+      position: poc.position,
+      client: poc.client
+    });
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditPOC = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPOC) return;
+
+    const updatedPOC: POC = {
+      ...editingPOC,
+      ...editFormData
+    };
+
+    setPOCs(prev => prev.map(p => p.id === editingPOC.id ? updatedPOC : p));
+    setEditingPOC(null);
   };
 
   const filteredPOCs = pocs.filter(poc => {
@@ -218,7 +262,11 @@ const POCs = () => {
                     <span className="text-xs text-gray-300">{poc.client}</span>
                   </td>
                   <td className="px-4 py-2">
-                    <button className="p-1 text-blue-400 hover:text-blue-300 rounded-md hover:bg-blue-500/10" title="Edit">
+                    <button 
+                      onClick={() => handleEditClick(poc)}
+                      className="p-1 text-blue-400 hover:text-blue-300 rounded-md hover:bg-blue-500/10" 
+                      title="Edit"
+                    >
                       <Pencil className="w-4 h-4" />
                     </button>
                   </td>
@@ -230,13 +278,17 @@ const POCs = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-        <span>0 of 0 items</span>
-        <button className="px-2 py-1 rounded hover:bg-gray-700">←</button>
-        <span>0</span>
-        <span>/</span>
-        <span>0</span>
-        <button className="px-2 py-1 rounded hover:bg-gray-700">→</button>
+      <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
+        <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg px-4 py-2">
+          <span>{filteredPOCs.length} of {pocs.length} items</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="px-2 py-1 rounded hover:bg-gray-700">←</button>
+          <span>{pocs.length > 0 ? 1 : 0}</span>
+          <span>/</span>
+          <span>{Math.ceil(pocs.length / 10)}</span>
+          <button className="px-2 py-1 rounded hover:bg-gray-700">→</button>
+        </div>
       </div>
 
       {/* Add POC Modal */}
@@ -365,6 +417,108 @@ const POCs = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Edit Modal */}
+      {editingPOC && (
+        <Modal title="Edit POC" isOpen={true} onClose={() => setEditingPOC(null)}>
+          <form onSubmit={handleEditPOC} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  Contact Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="contactName"
+                  value={editFormData.contactName}
+                  onChange={handleEditInputChange}
+                  required
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  Phone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={editFormData.phone}
+                  onChange={handleEditInputChange}
+                  required
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  Alternate Phone
+                </label>
+                <input
+                  type="tel"
+                  name="alternatePhone"
+                  value={editFormData.alternatePhone}
+                  onChange={handleEditInputChange}
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editFormData.email}
+                  onChange={handleEditInputChange}
+                  required
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  Position <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="position"
+                  value={editFormData.position}
+                  onChange={handleEditInputChange}
+                  required
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1">
+                  Client <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="client"
+                  value={editFormData.client}
+                  onChange={handleEditInputChange}
+                  required
+                  className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setEditingPOC(null)}
+                className="px-3 py-1.5 bg-gray-700 text-white rounded-lg text-xs hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };
