@@ -419,11 +419,11 @@ const UserManagement = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-400">Full Name</p>
-                  <p className="text-white">{selectedUser.name}</p>
+                  <p className="text-white truncate">{selectedUser.name}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">Email</p>
-                  <p className="text-white">{selectedUser.email}</p>
+                  <p className="text-white truncate max-w-[200px]">{selectedUser.email}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">Date of Birth</p>

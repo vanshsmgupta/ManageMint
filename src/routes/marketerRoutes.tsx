@@ -8,6 +8,7 @@ import Profile from '../pages/marketer/Profile';
 import Calendar from '../pages/marketer/Calendar';
 import Standup from '../pages/marketer/Standup';
 import Consultants from '../pages/marketer/Consultants';
+import AddConsultant from '../pages/marketer/AddConsultant';
 import Profiles from '../pages/marketer/Profiles';
 import Submissions from '../pages/marketer/Submissions';
 import Assessments from '../pages/marketer/Assessments';
@@ -51,6 +52,10 @@ export const marketerRoutes: RouteObject[] = [
       {
         path: 'consultants',
         element: <Consultants />
+      },
+      {
+        path: 'add-consultant',
+        element: <AddConsultant />
       },
       {
         path: 'profiles',

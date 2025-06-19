@@ -61,20 +61,13 @@ const Marketers = () => {
   // Load marketers from localStorage on component mount
   const [marketers, setMarketers] = useState<Marketer[]>(() => {
     const savedMarketers = localStorage.getItem('marketers');
-    return savedMarketers ? JSON.parse(savedMarketers) : [
-      {
-        id: '1',
-        name: 'Vansh',
-        email: 'vansh@hdi.com',
-        specialization: 'Workday',
-        status: 'active',
-        clients: 0,
-        joinDate: '2025-05-29',
-        isTeamLead: false,
-        role: 'marketer'
-      }
-    ];
+    return savedMarketers ? JSON.parse(savedMarketers) : [];
   });
+
+  // Update local state when context marketers change
+  useEffect(() => {
+    setMarketers(contextMarketers);
+  }, [contextMarketers]);
 
   // Save marketers to localStorage whenever they change
   useEffect(() => {
@@ -112,7 +105,14 @@ const Marketers = () => {
         tempPassword
       );
 
-      setMarketers(prev => [...prev, marketer]);
+      // Update marketers in localStorage with team lead status
+      const updatedMarketer = {
+        ...marketer,
+        isTeamLead: newMarketer.isTeamLead
+      };
+      setMarketers(prev => [...prev, updatedMarketer]);
+      localStorage.setItem('marketers', JSON.stringify([...marketers, updatedMarketer]));
+
       setShowAddModal(false);
 
       if (emailSent) {
@@ -145,15 +145,30 @@ const Marketers = () => {
   };
 
   const toggleMarketerStatus = (marketerId: string) => {
-    const marketer = contextMarketers.find(m => m.id === marketerId);
+    const marketer = marketers.find(m => m.id === marketerId);
     if (marketer) {
       const newStatus = marketer.status === 'active' ? 'inactive' : 'active';
+      
+      // Update in context
       updateMarketer(marketerId, { status: newStatus });
       
-      // Update the selected marketer if it's currently being viewed
+      // Update local state
+      setMarketers(prevMarketers => 
+        prevMarketers.map(m => 
+          m.id === marketerId ? { ...m, status: newStatus } : m
+        )
+      );
+      
+      // Update selected marketer if it's currently being viewed
       if (selectedMarketer && selectedMarketer.id === marketerId) {
-        setSelectedMarketer({ ...selectedMarketer, status: newStatus });
+        setSelectedMarketer(prev => prev ? { ...prev, status: newStatus } : null);
       }
+
+      // Update localStorage
+      const updatedMarketers = marketers.map(m =>
+        m.id === marketerId ? { ...m, status: newStatus } : m
+      );
+      localStorage.setItem('marketers', JSON.stringify(updatedMarketers));
     }
   };
 
@@ -222,6 +237,33 @@ const Marketers = () => {
     marketer.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const toggleTeamLeadStatus = (marketerId: string) => {
+    const marketer = marketers.find(m => m.id === marketerId);
+    if (marketer) {
+      const updatedMarketers = marketers.map(m => {
+        if (m.id === marketerId) {
+          return {
+            ...m,
+            isTeamLead: !m.isTeamLead,
+            role: !m.isTeamLead ? 'team_lead' : 'marketer'
+          };
+        }
+        return m;
+      });
+      setMarketers(updatedMarketers);
+      localStorage.setItem('marketers', JSON.stringify(updatedMarketers));
+      
+      // Update the selected marketer if it's currently being viewed
+      if (selectedMarketer && selectedMarketer.id === marketerId) {
+        setSelectedMarketer({
+          ...selectedMarketer,
+          isTeamLead: !selectedMarketer.isTeamLead,
+          role: !selectedMarketer.isTeamLead ? 'team_lead' : 'marketer'
+        });
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -248,46 +290,30 @@ const Marketers = () => {
         </div>
       </div>
 
-      <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg shadow-lg overflow-hidden">
-        <div className="p-6 border-b border-gray-700 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-white">All Marketers</h2>
-          <div className="relative w-96">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <Input
-              type="text"
-              placeholder="Search marketers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:ring-purple-500"
-            />
-          </div>
-        </div>
-
+      <div className="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-xl shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-700/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Specialization</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Clients</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Join Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+            <thead>
+              <tr className="border-b border-gray-700 bg-gray-800/50">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Role</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Team Lead</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
-              {filteredMarketers.map((marketer) => (
-                <tr key={marketer.id} className="hover:bg-gray-700/30">
-                  <td className="px-6 py-4 whitespace-nowrap">
+            <tbody className="divide-y divide-gray-700/50">
+              {marketers.map((marketer) => (
+                <tr key={marketer.id} className="hover:bg-gray-700/20">
+                  <td className="px-4 py-3">
                     <div className="flex items-center">
                       <img
                         src={`https://i.pravatar.cc/40?u=${marketer.id}`}
                         alt={marketer.name}
                         className="w-8 h-8 rounded-full mr-3"
                       />
-                      <button
+                      <button 
                         onClick={() => handleMarketerClick(marketer)}
                         className="font-medium text-white hover:text-blue-400 transition-colors"
                       >
@@ -295,57 +321,49 @@ const Marketers = () => {
                       </button>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-300">{marketer.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-3 py-1 text-sm text-purple-400 bg-purple-500/20 rounded-full">
-                      {marketer.specialization}
-                    </span>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-300">{marketer.email}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-3">
                     <button
                       onClick={() => toggleMarketerStatus(marketer.id)}
                       className={`px-2 py-1 text-xs font-medium rounded-full ${
                         marketer.status === 'active'
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-red-500/20 text-red-400'
+                          ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                          : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
                       }`}
                     >
                       {marketer.status}
                     </button>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="relative">
-                      <button
-                        onClick={() => {
-                          const newRole = marketer.isTeamLead ? 'marketer' : 'team_lead';
-                          if (window.confirm(`Are you sure you want to change ${marketer.name}'s role to ${newRole.replace('_', ' ')}?`)) {
-                            updateMarketer(marketer.id, {
-                              isTeamLead: !marketer.isTeamLead,
-                              role: newRole
-                            });
-                          }
-                        }}
-                        className={`px-3 py-1 text-sm ${
-                          marketer.isTeamLead 
-                            ? 'bg-blue-500/20 text-blue-400' 
-                            : 'bg-gray-500/20 text-gray-400'
-                        } rounded-full hover:bg-opacity-30 transition-colors`}
-                      >
-                        {marketer.isTeamLead ? 'Team Lead' : 'Marketer'}
-                      </button>
-                    </div>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-300">{marketer.role}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-300">{marketer.clients}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                    {new Date(marketer.joinDate).toLocaleDateString()}
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => toggleTeamLeadStatus(marketer.id)}
+                      className={`px-3 py-1 rounded-lg text-sm ${
+                        marketer.isTeamLead
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {marketer.isTeamLead ? 'Team Lead' : 'Make Team Lead'}
+                    </button>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-4 py-3">
                     <div className="flex items-center space-x-3">
-                      <button 
-                        onClick={() => handleDeleteMarketer(marketer.id)}
-                        className="text-red-400 hover:text-red-300"
+                      <button
+                        onClick={() => handleMarketerClick(marketer)}
+                        className="text-gray-400 hover:text-white"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMarketer(marketer.id)}
+                        className="text-gray-400 hover:text-red-500"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -353,25 +371,6 @@ const Marketers = () => {
               ))}
             </tbody>
           </table>
-        </div>
-
-        <div className="px-6 py-4 border-t border-gray-700">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-300">
-              Showing {filteredMarketers.length} marketers
-            </p>
-            <div className="flex space-x-2">
-              <button className="px-4 py-2 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700/50">
-                Previous
-              </button>
-              <button className="px-4 py-2 bg-purple-600/20 text-purple-400 rounded-md">
-                1
-              </button>
-              <button className="px-4 py-2 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700/50">
-                Next
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -489,17 +488,17 @@ const Marketers = () => {
                 Personal Information
               </h3>
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="overflow-hidden">
                   <p className="text-sm text-gray-400">Full Name</p>
-                  <p className="text-white">{selectedMarketer.name}</p>
+                  <p className="text-white truncate">{selectedMarketer.name}</p>
                 </div>
-                <div>
+                <div className="overflow-hidden">
                   <p className="text-sm text-gray-400">Email</p>
-                  <p className="text-white">{selectedMarketer.email}</p>
+                  <p className="text-white truncate" title={selectedMarketer.email}>{selectedMarketer.email}</p>
                 </div>
-                <div>
+                <div className="overflow-hidden">
                   <p className="text-sm text-gray-400">Specialization</p>
-                  <span className="px-3 py-1 text-sm text-purple-400 bg-purple-500/20 rounded-full">
+                  <span className="inline-block px-3 py-1 text-sm text-purple-400 bg-purple-500/20 rounded-full truncate">
                     {selectedMarketer.specialization}
                   </span>
                 </div>

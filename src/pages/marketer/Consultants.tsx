@@ -1,104 +1,225 @@
-import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, UserPlus, Edit2, MoreVertical } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 interface Consultant {
   id: string;
   name: string;
-  status: string;
-  keySkills: string[];
+  phone: string;
   usEntry: string;
   ssn: string;
-  dob: string;
-  marketer: string;
-  lastComment: string;
-  isTeamConsultant: boolean;
+  status: string;
+  assignedMarketer: string;
+  createdAt: string;
+  createdBy: string;
 }
 
-interface ActionFormProps {
+interface EditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  consultantId: string;
-  formType: 'marketing' | 'submission' | 'assessment' | 'offer';
+  consultant: Consultant | null;
+  onSave: (updatedConsultant: Consultant) => void;
+  marketers: any[];
 }
 
-const ActionForm: React.FC<ActionFormProps> = ({ isOpen, onClose, consultantId, formType }) => {
-  if (!isOpen) return null;
+const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, consultant, onSave, marketers }) => {
+  const [formData, setFormData] = useState<Consultant | null>(null);
 
-  const formTitles = {
-    marketing: 'Marketing Profile',
-    submission: 'Submission Details',
-    assessment: 'Assessment Form',
-    offer: 'Offer Details'
+  useEffect(() => {
+    setFormData(consultant);
+  }, [consultant]);
+
+  if (!isOpen || !formData) return null;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev!,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-gray-800 rounded-xl p-6 w-full max-w-2xl">
-        <h2 className="text-2xl font-bold text-white mb-4">{formTitles[formType]}</h2>
-        {/* Form content will be implemented based on specific requirements */}
-        <div className="space-y-4">
-          {/* Placeholder form fields */}
-          <div className="space-y-2">
-            <label className="text-gray-300">Title</label>
-            <input
-              type="text"
-              className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white"
-            />
+        <h2 className="text-2xl font-bold text-white mb-4">Edit Consultant</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Phone</label>
+              <input
+                type="text"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">US Entry Date</label>
+              <input
+                type="date"
+                name="usEntry"
+                value={formData.usEntry}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">SSN</label>
+              <input
+                type="text"
+                name="ssn"
+                value={formData.ssn}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Assigned To</label>
+              <select
+                name="assignedMarketer"
+                value={formData.assignedMarketer}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white"
+              >
+                {marketers.map((marketer) => (
+                  <option key={marketer.id} value={marketer.id}>
+                    {marketer.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Status</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
           </div>
-          <div className="space-y-2">
-            <label className="text-gray-300">Description</label>
-            <textarea
-              className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white"
-              rows={4}
-            />
+          <div className="flex justify-end gap-4 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            >
+              Save Changes
+            </button>
           </div>
-        </div>
-        <div className="flex justify-end gap-4 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
-          >
-            Cancel
-          </button>
-          <button
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-          >
-            Save
-          </button>
-        </div>
+        </form>
       </div>
     </div>
   );
 };
 
 const Consultants = () => {
+  const navigate = useNavigate();
+  const { user, isTeamLead } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
-  const [activeForm, setActiveForm] = useState<'marketing' | 'submission' | 'assessment' | 'offer' | null>(null);
-  const [activeFilter, setActiveFilter] = useState<'my' | 'team'>('my');
+  const [consultants, setConsultants] = useState<Consultant[]>([]);
+  const [marketers, setMarketers] = useState<any[]>([]);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedConsultant, setSelectedConsultant] = useState<Consultant | null>(null);
 
-  // Sample data - replace with actual data fetching
-  const consultants: Consultant[] = [];
+  // Load consultants and marketers from localStorage
+  useEffect(() => {
+    const storedConsultants = JSON.parse(localStorage.getItem('consultants') || '[]');
+    const storedMarketers = JSON.parse(localStorage.getItem('marketers') || '[]');
+    
+    setMarketers(storedMarketers);
 
-  const handleActionClick = (consultantId: string, formType: 'marketing' | 'submission' | 'assessment' | 'offer') => {
-    setSelectedConsultant(consultantId);
-    setActiveForm(formType);
+    // Filter consultants based on user role
+    if (isTeamLead) {
+      // Team leads can see all consultants assigned to their team's marketers
+      const teamMarketers = storedMarketers.filter((m: any) => !m.isTeamLead).map((m: any) => m.id);
+      const teamConsultants = storedConsultants.filter((c: Consultant) => 
+        teamMarketers.includes(c.assignedMarketer)
+      );
+      setConsultants(teamConsultants);
+    } else {
+      // Regular marketers can only see their assigned consultants
+      const myConsultants = storedConsultants.filter((c: Consultant) => 
+        c.assignedMarketer === user?.id
+      );
+      setConsultants(myConsultants);
+    }
+  }, [isTeamLead, user?.id]);
+
+  const getMarketerName = (marketerId: string) => {
+    const marketer = marketers.find(m => m.id === marketerId);
+    return marketer ? marketer.name : 'Unassigned';
   };
 
-  const filteredConsultants = consultants.filter(consultant => {
-    const matchesFilter = activeFilter === 'my' ? !consultant.isTeamConsultant : consultant.isTeamConsultant;
-    const matchesSearch = consultant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         consultant.keySkills.some(skill => skill.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                         consultant.status.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const handleStatusToggle = (consultant: Consultant) => {
+    const updatedConsultant = {
+      ...consultant,
+      status: consultant.status === 'active' ? 'inactive' : 'active'
+    };
+    handleConsultantUpdate(updatedConsultant);
+  };
+
+  const handleConsultantUpdate = (updatedConsultant: Consultant) => {
+    // Update in localStorage
+    const allConsultants = JSON.parse(localStorage.getItem('consultants') || '[]');
+    const updatedConsultants = allConsultants.map((c: Consultant) =>
+      c.id === updatedConsultant.id ? updatedConsultant : c
+    );
+    localStorage.setItem('consultants', JSON.stringify(updatedConsultants));
+
+    // Update in state
+    setConsultants(prev =>
+      prev.map(c => (c.id === updatedConsultant.id ? updatedConsultant : c))
+    );
+  };
+
+  const handleEdit = (consultant: Consultant) => {
+    setSelectedConsultant(consultant);
+    setEditModalOpen(true);
+  };
+
+  const filteredConsultants = consultants.filter(consultant =>
+    consultant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    consultant.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    consultant.usEntry.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">Consultants</h1>
-          <p className="text-sm text-gray-400">Manage consultant profiles and actions</p>
+          <p className="text-sm text-gray-400">
+            {isTeamLead ? "Manage your team's consultants" : "View your assigned consultants"}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -111,28 +232,15 @@ const Consultants = () => {
               className="pl-9 pr-4 py-1.5 text-sm bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 w-64"
             />
           </div>
-          <div className="flex gap-2">
+          {isTeamLead && (
             <button
-              onClick={() => setActiveFilter('my')}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                activeFilter === 'my'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
+              onClick={() => navigate('/marketer/add-consultant')}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
             >
-              My consultants
+              <UserPlus size={16} />
+              Add Consultant
             </button>
-            <button
-              onClick={() => setActiveFilter('team')}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                activeFilter === 'team'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-            >
-              Team's consultants
-            </button>
-          </div>
+          )}
         </div>
       </div>
 
@@ -142,14 +250,20 @@ const Consultants = () => {
             <thead>
               <tr className="border-b border-gray-700 bg-gray-800/50">
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Key Skills</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Phone</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">US Entry</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">SSN</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">DOB</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Marketer</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Last Comment</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                {isTeamLead && (
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Assigned To
+                  </th>
+                )}
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                {isTeamLead && (
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700/50">
@@ -159,19 +273,7 @@ const Consultants = () => {
                     <span className="text-sm font-medium text-white">{consultant.name}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-sm text-gray-300">{consultant.status}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {consultant.keySkills.map((skill, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
+                    <span className="text-sm text-gray-300">{consultant.phone}</span>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-sm text-gray-300">{consultant.usEntry}</span>
@@ -179,47 +281,45 @@ const Consultants = () => {
                   <td className="px-4 py-3">
                     <span className="text-sm text-gray-300">{consultant.ssn}</span>
                   </td>
+                  {isTeamLead && (
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-300">
+                        {getMarketerName(consultant.assignedMarketer)}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-4 py-3">
-                    <span className="text-sm text-gray-300">{consultant.dob}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-gray-300">{consultant.marketer}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-gray-300">{consultant.lastComment}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1.5">
+                    {isTeamLead ? (
                       <button
-                        onClick={() => handleActionClick(consultant.id, 'marketing')}
-                        className="px-2 py-1 text-xs bg-pink-500/20 text-pink-400 rounded hover:bg-pink-500/30"
-                        title="Marketing Profile"
+                        onClick={() => handleStatusToggle(consultant)}
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer ${
+                          consultant.status === 'active'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                        }`}
                       >
-                        Mp
+                        {consultant.status}
                       </button>
-                      <button
-                        onClick={() => handleActionClick(consultant.id, 'submission')}
-                        className="px-2 py-1 text-xs bg-yellow-500/20 text-yellow-400 rounded hover:bg-yellow-500/30"
-                        title="Submissions"
-                      >
-                        Sub
-                      </button>
-                      <button
-                        onClick={() => handleActionClick(consultant.id, 'assessment')}
-                        className="px-2 py-1 text-xs bg-orange-500/20 text-orange-400 rounded hover:bg-orange-500/30"
-                        title="Assessment"
-                      >
-                        Int
-                      </button>
-                      <button
-                        onClick={() => handleActionClick(consultant.id, 'offer')}
-                        className="px-2 py-1 text-xs bg-green-500/20 text-green-400 rounded hover:bg-green-500/30"
-                        title="Offer"
-                      >
-                        Offer
-                      </button>
-                    </div>
+                    ) : (
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        consultant.status === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {consultant.status}
+                      </span>
+                    )}
                   </td>
+                  {isTeamLead && (
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => handleEdit(consultant)}
+                        className="text-gray-400 hover:text-white transition-colors"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -227,14 +327,15 @@ const Consultants = () => {
         </div>
       </div>
 
-      <ActionForm
-        isOpen={!!activeForm}
+      <EditModal
+        isOpen={editModalOpen}
         onClose={() => {
+          setEditModalOpen(false);
           setSelectedConsultant(null);
-          setActiveForm(null);
         }}
-        consultantId={selectedConsultant || ''}
-        formType={activeForm || 'marketing'}
+        consultant={selectedConsultant}
+        onSave={handleConsultantUpdate}
+        marketers={marketers.filter(m => !m.isTeamLead)}
       />
     </div>
   );

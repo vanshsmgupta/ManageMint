@@ -16,7 +16,8 @@ import {
   Menu,
   X,
   User,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  UserPlus as AddConsultant
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -37,7 +38,7 @@ type NavLink = NavItem | NavSection;
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, isTeamLead } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
 
   const isPathActive = (path: string) => {
@@ -67,6 +68,7 @@ const Sidebar = () => {
     { path: '/marketer/calendar', icon: <CalendarIcon size={18} />, label: 'Calendar' },
     { path: '/marketer/standup', icon: <Users size={18} />, label: 'Standup' },
     { path: '/marketer/consultants', icon: <UserPlus size={18} />, label: 'Consultants' },
+    ...(isTeamLead ? [{ path: '/marketer/add-consultant', icon: <AddConsultant size={18} />, label: 'Add Consultant' }] : []),
     { path: '/marketer/profiles', icon: <FileText size={18} />, label: 'Profiles' },
     { path: '/marketer/submissions', icon: <Send size={18} />, label: 'Submissions' },
     { path: '/marketer/assessments', icon: <CheckSquare size={18} />, label: 'Assessments' },

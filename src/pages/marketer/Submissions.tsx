@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Pencil, Play, Download, X, Upload, FileText, Calendar } from 'lucide-react';
 import Modal from '../../components/Modal';
+import { useAuth } from '../../context/AuthContext';
+
+interface Consultant {
+  id: string;
+  name: string;
+  phone: string;
+  status: string;
+  assignedMarketer: string;
+}
 
 interface Submission {
   id: string;
@@ -10,7 +19,6 @@ interface Submission {
   client: string;
   implementationPartner: string;
   type: string;
-  employer: string;
   source: string;
   jobTitle: string;
   jobLocation: string;
@@ -45,7 +53,6 @@ interface SubmissionFormData {
   client: string;
   implementationPartner: string;
   type: string;
-  employer: string;
   source: string;
   jobTitle: string;
   jobLocation: string;
@@ -76,6 +83,7 @@ interface IP {
 }
 
 const Submissions = () => {
+  const { user, isTeamLead } = useAuth();
   const [searchName, setSearchName] = useState('');
   const [employerFilter, setEmployerFilter] = useState('');
   const [vendorFilter, setVendorFilter] = useState('');
@@ -86,6 +94,7 @@ const Submissions = () => {
   const [activeFilter, setActiveFilter] = useState<'my' | 'team'>('my');
   const [showAddModal, setShowAddModal] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [consultants, setConsultants] = useState<Consultant[]>([]);
   const [formData, setFormData] = useState<SubmissionFormData>({
     consultantName: '',
     marketingProfile: '',
@@ -93,7 +102,6 @@ const Submissions = () => {
     client: '',
     implementationPartner: '',
     type: '',
-    employer: '',
     source: '',
     jobTitle: '',
     jobLocation: '',
@@ -124,6 +132,25 @@ const Submissions = () => {
   const [newVendor, setNewVendor] = useState({ companyName: '', email: '', type: 'vendor' });
   const [newClient, setNewClient] = useState({ companyName: '', email: '' });
   const [newIP, setNewIP] = useState({ companyName: '', email: '', type: 'ip' });
+
+  // Load consultants from localStorage
+  useEffect(() => {
+    const storedConsultants = JSON.parse(localStorage.getItem('consultants') || '[]');
+    
+    // Filter consultants based on user role and active status
+    const filteredConsultants = storedConsultants.filter((consultant: Consultant) => {
+      if (consultant.status !== 'active') return false;
+      if (isTeamLead) {
+        // Team leads can see all consultants
+        return true;
+      } else {
+        // Regular marketers can only see their assigned consultants
+        return consultant.assignedMarketer === user?.id;
+      }
+    });
+
+    setConsultants(filteredConsultants);
+  }, [isTeamLead, user?.id]);
 
   // Load marketing profiles from localStorage
   useEffect(() => {
@@ -180,7 +207,6 @@ const Submissions = () => {
       client: formData.client,
       implementationPartner: formData.implementationPartner,
       type: formData.type,
-      employer: formData.employer,
       source: formData.source,
       jobTitle: formData.jobTitle,
       jobLocation: formData.jobLocation,
@@ -201,7 +227,6 @@ const Submissions = () => {
       client: '',
       implementationPartner: '',
       type: '',
-      employer: '',
       source: '',
       jobTitle: '',
       jobLocation: '',
@@ -377,7 +402,6 @@ const Submissions = () => {
                 <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Client</th>
                 <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Vendor</th>
                 <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">IP</th>
-                <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Employer</th>
                 <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
                 <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Location</th>
                 <th className="px-3 py-2 text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Position</th>
@@ -409,9 +433,6 @@ const Submissions = () => {
                   </td>
                   <td className="px-3 py-2">
                     <span className="text-xs text-gray-300">{submission.implementationPartner}</span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="text-xs text-gray-300">{submission.employer}</span>
                   </td>
                   <td className="px-3 py-2">
                     <span className="text-xs text-gray-300">{new Date(submission.submissionDate).toLocaleDateString()}</span>
@@ -463,7 +484,7 @@ const Submissions = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1">
-                Consultant Name <span className="text-red-500">*</span>
+                Consultants <span className="text-red-500">*</span>
               </label>
               <select
                 name="consultantName"
@@ -473,7 +494,11 @@ const Submissions = () => {
                 className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
               >
                 <option value="">Select consultant...</option>
-                {/* Add consultant options here */}
+                {consultants.map((consultant) => (
+                  <option key={consultant.id} value={consultant.name}>
+                    {consultant.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -593,22 +618,6 @@ const Submissions = () => {
                 <option value="fulltime">Full Time</option>
                 <option value="contract">Contract</option>
                 <option value="contract_to_hire">Contract to Hire</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">
-                Employer <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="employer"
-                value={formData.employer}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
-              >
-                <option value="">Select employer...</option>
-                {/* Add employer options here */}
               </select>
             </div>
 

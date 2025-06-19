@@ -1,50 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Eye, Pencil, Play, Download, X, Calendar, FileText, Link as LinkIcon, Trash, MessageCircle } from 'lucide-react';
 import Modal from '../../components/Modal';
+import { useAuth } from '../../context/AuthContext';
 
-interface Assessment {
+interface Consultant {
   id: string;
-  consultant: string;
-  interviewTimeSlot: string;
-  assessmentType: 'Interview' | 'Screening';
-  status: 'Pending' | 'Cleared' | 'Rescheduled';
-  attendees: string[];
-  client: string;
-  clientFeedback: string;
-  intervieweeFeedback: string;
-  attachment: string | null;
-  meetingLink: string;
-}
-
-interface AssessmentFormData {
-  consultant: string;
-  interviewTimeSlot: string;
-  assessmentType: 'Interview' | 'Screening';
-  attendees: string[];
-  client: string;
-}
-
-interface Vendor {
-  id: string;
-  companyName: string;
-  email: string;
-  type: string;
+  name: string;
+  phone: string;
+  status: string;
+  assignedMarketer: string;
 }
 
 interface Client {
   id: string;
   companyName: string;
-  email: string;
 }
 
 interface IP {
   id: string;
-  companyName: string;
-  email: string;
-  type: string;
+  name: string;
+}
+
+interface Assessment {
+  id: string;
+  consultantId: string;
+  consultantName: string;
+  clientId: string;
+  clientName: string;
+  assessmentType: string;
+  interviewTime: string;
+  attendees: string[];
+  status: string;
+  createdBy: string;
+  clientFeedback?: string;
+  intervieweeFeedback?: string;
 }
 
 const Assessments = () => {
+  const { user, isTeamLead } = useAuth();
   const [consultantFilter, setConsultantFilter] = useState('');
   const [employerFilter, setEmployerFilter] = useState('');
   const [vendorFilter, setVendorFilter] = useState('');
@@ -59,17 +52,7 @@ const Assessments = () => {
     const savedAssessments = localStorage.getItem('assessments');
     return savedAssessments ? JSON.parse(savedAssessments) : [];
   });
-  const [formData, setFormData] = useState<AssessmentFormData>({
-    consultant: '',
-    interviewTimeSlot: '',
-    assessmentType: 'Interview',
-    attendees: [],
-    client: ''
-  });
-  const [vendors, setVendors] = useState<Vendor[]>(() => {
-    const savedVendors = localStorage.getItem('vendors');
-    return savedVendors ? JSON.parse(savedVendors) : [];
-  });
+  const [consultants, setConsultants] = useState<Consultant[]>([]);
   const [clients, setClients] = useState<Client[]>(() => {
     const savedClients = localStorage.getItem('clients');
     return savedClients ? JSON.parse(savedClients) : [];
@@ -78,53 +61,83 @@ const Assessments = () => {
     const savedIPs = localStorage.getItem('implementationPartners');
     return savedIPs ? JSON.parse(savedIPs) : [];
   });
+  const [formData, setFormData] = useState({
+    consultantId: '',
+    clientId: '',
+    assessmentType: 'Interview',
+    interviewTime: '',
+    attendees: ''
+  });
 
   // Save assessments to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('assessments', JSON.stringify(assessments));
   }, [assessments]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Load data from localStorage
+  useEffect(() => {
+    const storedConsultants = JSON.parse(localStorage.getItem('consultants') || '[]');
+    const storedClients = JSON.parse(localStorage.getItem('clients') || '[]');
+
+    // Filter consultants based on user role and active status
+    const filteredConsultants = storedConsultants.filter((consultant: Consultant) => {
+      if (consultant.status !== 'active') return false;
+      if (isTeamLead) {
+        // Team leads can see all consultants
+        return true;
+      } else {
+        // Regular marketers can only see their assigned consultants
+        return consultant.assignedMarketer === user?.id;
+      }
+    });
+
+    setConsultants(filteredConsultants);
+    setClients(storedClients);
+  }, [isTeamLead, user?.id]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name === 'attendees') {
-      setFormData(prev => ({
-        ...prev,
-        attendees: value.split(',').map(email => email.trim())
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    const selectedConsultant = consultants.find(c => c.id === formData.consultantId);
+    const selectedClient = clients.find(c => c.id === formData.clientId);
+
     const newAssessment: Assessment = {
       id: Date.now().toString(),
-      consultant: formData.consultant,
-      interviewTimeSlot: formData.interviewTimeSlot,
+      consultantId: formData.consultantId,
+      consultantName: selectedConsultant?.name || '',
+      clientId: formData.clientId,
+      clientName: selectedClient?.companyName || '',
       assessmentType: formData.assessmentType,
-      status: 'Pending',
-      attendees: formData.attendees,
-      client: formData.client,
+      interviewTime: formData.interviewTime,
+      attendees: formData.attendees.split(',').map(email => email.trim()),
+      status: 'scheduled',
+      createdBy: user?.id || '',
       clientFeedback: '',
-      intervieweeFeedback: '',
-      attachment: null,
-      meetingLink: ''
+      intervieweeFeedback: ''
     };
 
-    setAssessments(prev => [...prev, newAssessment]);
-    setShowAddModal(false);
+    // Save to localStorage
+    const updatedAssessments = [...assessments, newAssessment];
+    localStorage.setItem('assessments', JSON.stringify(updatedAssessments));
+    setAssessments(updatedAssessments);
+
+    // Reset form and close modal
     setFormData({
-      consultant: '',
-      interviewTimeSlot: '',
+      consultantId: '',
+      clientId: '',
       assessmentType: 'Interview',
-      attendees: [],
-      client: ''
+      interviewTime: '',
+      attendees: ''
     });
+    setShowAddModal(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -184,11 +197,6 @@ const Assessments = () => {
           className="px-3 py-1.5 bg-gray-800/50 border border-gray-700 rounded-lg text-xs text-gray-300"
         >
           <option value="">Vendor</option>
-          {vendors.map(vendor => (
-            <option key={vendor.id} value={vendor.id}>
-              {vendor.companyName}
-            </option>
-          ))}
         </select>
         <select
           value={pocFilter}
@@ -205,7 +213,7 @@ const Assessments = () => {
           <option value="">Client</option>
           {clients.map(client => (
             <option key={client.id} value={client.id}>
-              {client.companyName} - {client.email}
+              {client.companyName}
             </option>
           ))}
         </select>
@@ -259,11 +267,11 @@ const Assessments = () => {
                 <tr key={assessment.id} className="hover:bg-gray-700/20">
                   <td className="px-3 py-2">
                     <span className="text-xs text-blue-400 hover:underline cursor-pointer">
-                      {assessment.consultant}
+                      {assessment.consultantName}
                     </span>
                   </td>
                   <td className="px-3 py-2">
-                    <span className="text-xs text-gray-300">{assessment.interviewTimeSlot}</span>
+                    <span className="text-xs text-gray-300">{assessment.interviewTime}</span>
                   </td>
                   <td className="px-3 py-2">
                     <span className="text-xs text-gray-300">{assessment.assessmentType}</span>
@@ -277,7 +285,7 @@ const Assessments = () => {
                     <span className="text-xs text-gray-300">{assessment.attendees.join(', ')}</span>
                   </td>
                   <td className="px-3 py-2">
-                    <span className="text-xs text-gray-300">{assessment.client}</span>
+                    <span className="text-xs text-gray-300">{assessment.clientName}</span>
                   </td>
                   <td className="px-3 py-2">
                     <span className="text-xs text-gray-300">{assessment.clientFeedback || '-'}</span>
@@ -332,13 +340,18 @@ const Assessments = () => {
                 Consultant <span className="text-red-500">*</span>
               </label>
               <select
-                name="consultant"
-                value={formData.consultant}
+                name="consultantId"
+                value={formData.consultantId}
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
               >
                 <option value="">Select consultant...</option>
+                {consultants.map((consultant) => (
+                  <option key={consultant.id} value={consultant.id}>
+                    {consultant.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -348,8 +361,8 @@ const Assessments = () => {
               </label>
               <input
                 type="datetime-local"
-                name="interviewTimeSlot"
-                value={formData.interviewTimeSlot}
+                name="interviewTime"
+                value={formData.interviewTime}
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
@@ -378,16 +391,16 @@ const Assessments = () => {
                 Client <span className="text-red-500">*</span>
               </label>
               <select
-                name="client"
-                value={formData.client}
+                name="clientId"
+                value={formData.clientId}
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-1.5 bg-gray-700/50 border border-gray-600 rounded-lg text-xs text-white"
               >
                 <option value="">Select client...</option>
-                {clients.map(client => (
+                {clients.map((client) => (
                   <option key={client.id} value={client.id}>
-                    {client.companyName} - {client.email}
+                    {client.companyName}
                   </option>
                 ))}
               </select>
@@ -400,7 +413,7 @@ const Assessments = () => {
               <input
                 type="text"
                 name="attendees"
-                value={formData.attendees.join(', ')}
+                value={formData.attendees}
                 onChange={handleInputChange}
                 placeholder="Enter attendee emails (comma separated)"
                 required
